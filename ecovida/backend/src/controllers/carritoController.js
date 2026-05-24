@@ -1,0 +1,111 @@
+const express = require('express');
+const CarritoRepository = require('../repositories/carritoRepository');
+const ProductosRepository = require('../repositories/productosRepository');
+const authMiddleware = require('../middleware/authMiddleware');
+
+const router = express.Router();
+router.use(authMiddleware);
+
+// GET /api/carrito - Obtener carrito del usuario
+router.get('/', async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const items = await CarritoRepository.obtenerCarritoUsuario(usuarioId);
+    const total = await CarritoRepository.obtenerTotal(usuarioId);
+
+    res.json({
+      items,
+      total,
+      cantidad: items.length
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/carrito - Agregar producto al carrito
+router.post('/', async (req, res) => {
+  try {
+    const { productoId, cantidad } = req.body;
+    const usuarioId = req.usuario.id;
+
+    if (!productoId || !cantidad || cantidad < 1) {
+      return res.status(400).json({ error: 'Datos inválidos' });
+    }
+
+    // Validar que el producto existe
+    const producto = await ProductosRepository.obtenerPorId(productoId);
+    if (!producto) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    if (producto.stock < cantidad) {
+      return res.status(400).json({ error: 'Stock insuficiente' });
+    }
+
+    // Agregar al carrito
+    await CarritoRepository.agregarAlCarrito(usuarioId, productoId, cantidad, producto.precio);
+
+    res.json({ exito: true, mensaje: 'Producto agregado al carrito' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/carrito/:productoId - Actualizar cantidad
+router.put('/:productoId', async (req, res) => {
+  try {
+    const { cantidad } = req.body;
+    const { productoId } = req.params;
+    const usuarioId = req.usuario.id;
+
+    if (!cantidad || cantidad < 0) {
+      return res.status(400).json({ error: 'Cantidad inválida' });
+    }
+
+    const actualizado = await CarritoRepository.actualizarCantidad(
+      usuarioId,
+      productoId,
+      cantidad
+    );
+
+    if (!actualizado) {
+      return res.status(404).json({ error: 'Producto no encontrado en carrito' });
+    }
+
+    res.json({ exito: true, mensaje: 'Carrito actualizado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/carrito/:productoId - Eliminar del carrito
+router.delete('/:productoId', async (req, res) => {
+  try {
+    const { productoId } = req.params;
+    const usuarioId = req.usuario.id;
+
+    const eliminado = await CarritoRepository.eliminarDelCarrito(usuarioId, productoId);
+
+    if (!eliminado) {
+      return res.status(404).json({ error: 'Producto no encontrado en carrito' });
+    }
+
+    res.json({ exito: true, mensaje: 'Producto eliminado del carrito' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/carrito - Vaciar carrito
+router.delete('/', async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    await CarritoRepository.vaciarCarrito(usuarioId);
+    res.json({ exito: true, mensaje: 'Carrito vaciado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
