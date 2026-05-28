@@ -21,18 +21,18 @@ function getImageUrl(ruta) {
   if (!ruta) return 'images/producto-default.svg';
   if (ruta.startsWith('http')) return ruta;
   
-  // Si la ruta en la base de datos ya incluye la carpeta del frontend
-  if (ruta.includes('frontend/images/') || ruta.includes('images/')) {
+  // Si es un SVG o imagen por defecto de los datos de prueba (seed)
+  if (ruta.includes('producto-') || ruta.includes('default')) {
     const partes = ruta.split('/');
     const nombreArchivo = partes[partes.length - 1];
     return `images/${nombreArchivo}`;
   }
 
   // Si es un archivo local del backend, construimos la ruta completa
-  // Ajusta la carpeta "uploads" dependiendo de cómo la sirvas en Express
   const baseUrl = API_BASE.replace('/api', '');
-  const cleanRuta = ruta.startsWith('/') ? ruta.substring(1) : ruta;
-  return `${baseUrl}/uploads/${cleanRuta}`;
+  const partes2 = ruta.split('/');
+  const nombreArchivoSubido = partes2[partes2.length - 1];
+  return `${baseUrl}/uploads/${nombreArchivoSubido}`;
 }
 
 class APIService {
