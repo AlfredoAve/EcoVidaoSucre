@@ -28,11 +28,11 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
-<link href="../CSS/style.css" rel="stylesheet"/>
+<link href="CSS/style.css" rel="stylesheet"/>
 </head>
 <body>
 <div id="navbar-container"></div>
-<script src="../js/navbarLoader.js"></script>
+<script src="js/navbarLoader.js"></script>
 
 <main class="mt-4 pt-3">
 <!-- Hero -->
@@ -65,7 +65,7 @@
 <div class="row g-5">
 <div class="col-lg-4 col-md-6">
 <div class="mb-3">
-<img alt="EcoVida logotipo" class="footer-logo" src="../images/logo.png"/>
+<img alt="EcoVida logotipo" class="footer-logo" src="images/logo.png"/>
 </div>
 <p class="footer-text mb-3">Tu tienda confiable de productos naturales y orgánicos para una vida más saludable.</p>
 <div class="social-links">
@@ -117,8 +117,8 @@
 </div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
-<script src="../js/apiService.js"></script>
-<script src="../js/header.js"></script>
+<script src="js/apiService.js"></script>
+<script src="js/header.js"></script>
 <script>
     const API_BASE_CAT = (() => {
       const h = window.location.hostname;
@@ -144,16 +144,16 @@
         grid.style.display = '';
 
         categorias.forEach(cat => {
-          const imgSrc = cat.imagen || '../images/producto-default.svg';
+          const imgSrc = cat.imagen || 'images/producto-default.svg';
           const imgAlt = `Categoría ${cat.nombre} — productos naturales EcoVida`;
           const col = document.createElement('div');
           col.className = 'col-sm-6 col-md-4 col-lg-3';
           col.innerHTML = `
             <a href="productos.html?categoria=${encodeURIComponent(cat.id)}"
                class="card h-100 text-decoration-none category-card eco-category-card">
-              <img src="${imgSrc}" alt="${imgAlt}"
-                   class="card-img-top"
-                   onerror="this.src='../images/producto-default.svg';this.onerror=null;">
+                  <img src="${imgSrc}" alt="${imgAlt}"
+                    class="card-img-top"
+                    onerror="this.src='images/producto-default.svg';this.onerror=null;">
               ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#ff9800;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
               <div class="card-body text-center">
                 <h5 class="card-title fw-bold text-dark mb-1">${cat.nombre}</h5>
@@ -186,6 +186,6 @@
   })();
   </script>
 <!--End of Tawk.to Script-->
-<script src="../js/socialFloat.js"></script>
+<script src="js/socialFloat.js"></script>
 </body>
 </html>

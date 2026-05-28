@@ -30,10 +30,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Servir frontend estático
-app.use('/frontend/html', express.static(path.join(__dirname, '..', 'frontend', 'html')));
-app.use('/frontend/js', express.static(path.join(__dirname, '..', 'frontend', 'js')));
-app.use('/frontend/CSS', express.static(path.join(__dirname, '..', 'frontend', 'CSS')));
-app.use('/frontend/images', express.static(path.join(__dirname, '..', 'frontend', 'images')));
+app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 
 // Rutas API
 app.use('/api/auth', authController);
@@ -49,17 +46,14 @@ app.use('/api/favoritos', favoritosController);
 
 // Ruta raíz: redirige a la página principal
 app.get('/', (req, res) => {
-  res.redirect('/frontend/html/index.html');
+  res.redirect('/frontend/index.html');
 });
 
 // Compatibilidad: permitir acceso histórico sin /html
 app.get('/frontend', (req, res) => {
-  res.redirect('/frontend/html/index.html');
+  res.redirect('/frontend/index.html');
 });
 
-app.get('/frontend/index.html', (req, res) => {
-  res.redirect('/frontend/html/index.html');
-});
 
 // Sitemap y robots.txt
 app.get('/sitemap.xml', (req, res) => {
@@ -77,15 +71,15 @@ const PORT = process.env.PORT || 3001;
 
 // Handler 404 — debe ir al final, después de todas las rutas
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, '..', 'frontend', 'html', '404.html'));
+  res.status(404).sendFile(path.join(__dirname, '..', 'frontend', '404.html'));
 });
 
 initDB()
   .then(() => {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor EcoVida escuchando en puerto ${PORT}`);
-      console.log(`📱 Local: http://localhost:${PORT}/frontend/html/index.html`);
-      console.log(`🌐 Network: http://[TU-IP-LOCAL]:${PORT}/frontend/html/index.html`);
+      console.log(`📱 Local: http://localhost:${PORT}/frontend/index.html`);
+      console.log(`🌐 Network: http://[TU-IP-LOCAL]:${PORT}/frontend/index.html`);
     });
   })
   .catch(err => {
