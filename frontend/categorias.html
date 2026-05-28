@@ -137,7 +137,7 @@
         grid.style.display = '';
 
         categorias.forEach(cat => {
-          const imgSrc = cat.imagen || 'images/producto-default.svg';
+          const imgSrc = APIService.getImageUrl(cat.imagen);
           const imgAlt = `Categoría ${cat.nombre} — productos naturales EcoVida`;
           const col = document.createElement('div');
           col.className = 'col-sm-6 col-md-4 col-lg-3';
@@ -146,7 +146,7 @@
                class="card h-100 text-decoration-none category-card eco-category-card">
                   <img src="${imgSrc}" alt="${imgAlt}"
                     class="card-img-top"
-                    onerror="this.src='images/producto-default.svg';this.onerror=null;">
+                    onerror="this.src='images/producto-default.svg'; this.onerror=null;">
               ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#ff9800;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
               <div class="card-body text-center">
                 <h5 class="card-title fw-bold text-dark mb-1">${cat.nombre}</h5>

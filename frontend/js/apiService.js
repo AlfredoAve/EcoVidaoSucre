@@ -17,7 +17,27 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+function getImageUrl(ruta) {
+  if (!ruta) return 'images/producto-default.svg';
+  if (ruta.startsWith('http')) return ruta;
+  
+  // Si la ruta en la base de datos ya incluye la carpeta del frontend
+  if (ruta.includes('frontend/images/') || ruta.includes('images/')) {
+    const partes = ruta.split('/');
+    const nombreArchivo = partes[partes.length - 1];
+    return `images/${nombreArchivo}`;
+  }
+
+  // Si es un archivo local del backend, construimos la ruta completa
+  // Ajusta la carpeta "uploads" dependiendo de cómo la sirvas en Express
+  const baseUrl = API_BASE.replace('/api', '');
+  const cleanRuta = ruta.startsWith('/') ? ruta.substring(1) : ruta;
+  return `${baseUrl}/uploads/${cleanRuta}`;
+}
+
 class APIService {
+  static getImageUrl = getImageUrl;
+
   static getToken() {
     return localStorage.getItem('token');
   }
