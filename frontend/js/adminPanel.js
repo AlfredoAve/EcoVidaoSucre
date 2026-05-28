@@ -1,8 +1,4 @@
 // Admin Panel - CRUD completo
-const ADMIN_API = (() => {
-  const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-  return isProd ? '/api' : 'http://localhost:3001/api';
-})();
 
 let productoEditando = null;
 let categoriaEditando = null;
@@ -145,7 +141,7 @@ function esActivo(valor) {
 }
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(`${ADMIN_API}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: APIService.getHeaders()
   });
@@ -166,7 +162,7 @@ async function subirImagen(file) {
   const token = APIService.getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${ADMIN_API}/admin/upload`, {
+  const res = await fetch(`${API_BASE}/admin/upload`, {
     method: 'POST',
     headers,
     body: formData
@@ -206,7 +202,7 @@ function renderizarTablaProductos() {
         <td>
           <div class="d-flex align-items-center gap-2">
             ${prod.imagen
-              ? `<img src="${escapeHtml(prod.imagen)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;" alt="">`
+              ? `<img src="${APIService.getImageUrl(prod.imagen)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;" alt="" onerror="this.src='images/producto-default.svg';this.onerror=null;">`
               : `<div style="width:38px;height:38px;background:#e9ecef;border-radius:6px;"></div>`}
             <strong>${escapeHtml(prod.nombre)}</strong>
           </div>

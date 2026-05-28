@@ -34,8 +34,12 @@ async function handleLogin(e) {
     // Guardar datos del usuario
     localStorage.setItem('usuario', JSON.stringify(resultado.usuario));
 
-    // Redirigir
-    window.location.href = 'index.html';
+    // Redirigir según el rol
+    if (resultado.usuario.rol === 'admin') {
+      window.location.href = 'panel-admin.html';
+    } else {
+      window.location.href = 'index.html';
+    }
   } catch (error) {
     errorAlert.textContent = 'Error al iniciar sesión';
     errorAlert.style.display = 'block';

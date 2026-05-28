@@ -19,7 +19,7 @@ console.log('╚═════════════════════�
 
 // PASO 1: Eliminar BD antigua
 console.log('⏳ Paso 1: Limpiando base de datos anterior...\n');
-if (fs.existsSync(dbPath)) {
+if (fs.existsSync(dbPath) && process.env.NODE_ENV !== 'production') {
   try {
     fs.unlinkSync(dbPath);
     console.log('   ✅ Base de datos anterior eliminada\n');
@@ -27,7 +27,7 @@ if (fs.existsSync(dbPath)) {
     console.log('   ⚠️  No se pudo eliminar BD:', err.message, '\n');
   }
 } else {
-  console.log('   ✅ No había BD anterior (primera ejecución)\n');
+  console.log('   ✅ Conservando BD actual (o es entorno de producción)\n');
 }
 
 // PASO 2: Verificar dependencias

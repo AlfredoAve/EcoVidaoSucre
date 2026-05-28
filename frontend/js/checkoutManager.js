@@ -5,19 +5,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function mostrarDetallesOrden() {
-  const ordenData = localStorage.getItem('ordenActual');
-
-  if (!ordenData) {
-    document.getElementById('orderDetails').innerHTML = '<p class="text-danger">No hay orden para mostrar</p>';
-    return;
-  }
-
+async function mostrarDetallesOrden() {
   try {
-    const orden = JSON.parse(ordenData);
+    let orden = null;
+    const params = new URLSearchParams(window.location.search);
+    const ordenIdUrl = params.get('id');
 
-    document.getElementById('ordenId').textContent = `#${orden.ordenId}`;
-    document.getElementById('ordenTotal').textContent = `Bs ${orden.total.toFixed(2)}`;
+    if (ordenIdUrl) {
+      // Obtener de la API si venimos de PayPal (tiene ID en la URL)
+      orden = await APIService.obtenerOrdenPorId(ordenIdUrl);
+      if (orden.error) throw new Error(orden.error);
+    } else {
+      // Fallback a localStorage (Pago contra entrega clásico)
+      const ordenData = localStorage.getItem('ordenActual');
+      if (!ordenData) {
+        document.getElementById('orderDetails').innerHTML = '<p class="text-danger">No hay orden para mostrar</p>';
+        return;
+      }
+      orden = JSON.parse(ordenData);
+    }
+
+    const idMostrar = orden.ordenId || orden.id; // Manejar diferencias entre API y LocalStorage
+    const totalMostrar = orden.total || 0;
+
+    document.getElementById('ordenId').textContent = `#${idMostrar}`;
+    document.getElementById('ordenTotal').textContent = `Bs ${Number(totalMostrar).toFixed(2)}`;
 
     let htmlProductos = '';
     orden.productos.forEach(prod => {
@@ -63,7 +75,7 @@ function initPayPal(totalAmount) {
     },
 
     createOrder: async function () {
-      const res = await fetch('/api/paypal/crear-orden', {
+      const res = await fetch(`${API_BASE}/paypal/crear-orden`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +90,7 @@ function initPayPal(totalAmount) {
 
     onApprove: async function (data) {
       try {
-        const res = await fetch('/api/paypal/capturar-orden', {
+        const res = await fetch(`${API_BASE}/paypal/capturar-orden`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -93,7 +105,7 @@ function initPayPal(totalAmount) {
           document.getElementById('pago-exitoso').style.display = 'block';
           document.getElementById('paypal-button-container').style.display = 'none';
           setTimeout(() => {
-            window.location.href = '/frontend/html/orden-confirmacion.html?orden=' + result.ordenId;
+            window.location.href = `orden-confirmacion.html?id=${result.ordenId}`;
           }, 2000);
         } else {
           throw new Error(result.error || 'Error al procesar el pago');

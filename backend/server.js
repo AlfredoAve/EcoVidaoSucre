@@ -32,6 +32,12 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Servir frontend estático
 app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 
+// Servir carpeta de uploads (imágenes subidas por el admin)
+const fs = require('fs');
+const uploadsPath = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
+app.use('/uploads', express.static(uploadsPath));
+
 // Rutas API
 app.use('/api/auth', authController);
 app.use('/api/productos', productosController);
