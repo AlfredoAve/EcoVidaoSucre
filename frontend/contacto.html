@@ -210,19 +210,10 @@
       };
 
       try {
-        const res = await fetch('/api/contacto', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const data = await res.json();
-        if (res.ok) {
-          document.getElementById('contactSuccess').style.display = 'block';
-          document.getElementById('contactError').style.display = 'none';
-          document.getElementById('contactForm').reset();
-        } else {
-          throw new Error(data.error || 'Error al enviar el mensaje');
-        }
+        await APIService.enviarContacto(body);
+        document.getElementById('contactSuccess').style.display = 'block';
+        document.getElementById('contactError').style.display = 'none';
+        document.getElementById('contactForm').reset();
       } catch (err) {
         const errEl = document.getElementById('contactError');
         errEl.textContent = err.message;

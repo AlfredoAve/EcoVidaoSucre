@@ -243,4 +243,18 @@ class APIService {
     });
     return res.json();
   }
+
+  // CONTACTO
+  static async enviarContacto(datos) {
+    const res = await fetch(`${API_BASE}/contacto`, {
+      method: 'POST',
+      headers: this.getHeaders(false),
+      body: JSON.stringify(datos)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al enviar el mensaje');
+    }
+    return data;
+  }
 }
