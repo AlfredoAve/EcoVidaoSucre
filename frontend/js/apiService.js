@@ -1,8 +1,11 @@
 // API Service - Cliente para llamadas HTTP
-const API_BASE = (() => {
-  const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-  return isProduction ? '/api' : 'http://localhost:3001/api';
-})();
+
+let API_BASE = '';
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    API_BASE = 'http://localhost:3001/api';
+} else {
+    API_BASE = 'https://ecovida-backend.onrender.com/api';
+}
 
 function escapeHtml(str) {
   if (str == null) return '';

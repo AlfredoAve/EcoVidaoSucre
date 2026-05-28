@@ -10,70 +10,87 @@ EcoVida es una tienda online desarrollada desde cero para la venta de productos 
 
 ### Backend
 ```
-ecovida/backend/
+backend/
 ├── src/
 │   ├── config/
-│   │   └── database.js           # Configuración SQLite
-│   ├── models/
-│   │   ├── Usuario.js
-│   │   ├── Producto.js
-│   │   ├── Carrito.js
-│   │   ├── Orden.js
-│   │   ├── Resena.js
-│   │   └── Categoria.js
-│   ├── repositories/             # Acceso a datos
-│   │   ├── userRepository.js
-│   │   ├── productosRepository.js
-│   │   ├── carritoRepository.js
-│   │   ├── ordenesRepository.js
-│   │   ├── resenasRepository.js
-│   │   └── categoriaRepository.js
-│   ├── services/                 # Lógica de negocio
-│   │   ├── authService.js
-│   │   └── checkoutService.js
-│   ├── controllers/              # Rutas API
-│   │   ├── authController.js
-│   │   ├── productosController.js
-│   │   ├── carritoController.js
-│   │   ├── ordenesController.js
-│   │   ├── resenasController.js
-│   │   ├── categoriaController.js
+│   │   └── database.js
+│   ├── controllers/
 │   │   ├── adminController.js
+│   │   ├── authController.js
+│   │   ├── carritoController.js
+│   │   ├── categoriaController.js
+│   │   ├── contactoController.js
+│   │   ├── favoritosController.js
+│   │   ├── ordenesController.js
+│   │   ├── paypalController.js
+│   │   ├── productosController.js
+│   │   ├── resenasController.js
 │   │   └── userController.js
-│   └── middleware/
-│       ├── authMiddleware.js
-│       └── adminMiddleware.js
-├── server.js                     # Servidor Express
+│   ├── middleware/
+│   │   ├── adminMiddleware.js
+│   │   └── authMiddleware.js
+│   ├── models/
+│   │   ├── Carrito.js
+│   │   ├── Categoria.js
+│   │   ├── Orden.js
+│   │   ├── Producto.js
+│   │   ├── Resena.js
+│   │   └── Usuario.js
+│   ├── repositories/
+│   │   ├── carritoRepository.js
+│   │   ├── categoriaRepository.js
+│   │   ├── favoritosRepository.js
+│   │   ├── ordenesRepository.js
+│   │   ├── productosRepository.js
+│   │   ├── resenasRepository.js
+│   │   └── userRepository.js
+│   ├── services/
+│   │   ├── authService.js
+│   │   ├── checkoutService.js
+│   │   ├── facturaService.js
+│   │   └── paypalService.js
+├── server.js
 ├── package.json
-└── database.db                   # Base de datos SQLite
-```
-
+├── run-server.js
+├── seed.js
+└── .env
 ### Frontend
 ```
-ecovida/frontend/
-├── html/
-│   ├── index.html                # Página principal
-│   ├── productos.html            # Catálogo con filtros
-│   ├── carrito.html              # Carrito de compras
-│   ├── orden-confirmacion.html   # Confirmación de compra
-│   ├── profile.html              # Perfil de usuario
-│   ├── login.html                # Iniciar sesión
-│   ├── register.html             # Crear cuenta
-│   └── sobre-nosotros.html       # Info de la tienda
+frontend/
+├── index.html
+├── productos.html
+├── carrito.html
+├── orden-confirmacion.html
+├── profile.html
+├── login.html
+├── register.html
+├── sobre-nosotros.html
+├── contacto.html
+├── categorias.html
+├── panel-admin.html
+├── terminos.html
+├── privacidad.html
+├── 404.html
+├── test-login.html
+├── _navbar.html
 ├── js/
-│   ├── apiService.js             # Cliente HTTP
-│   ├── auth.js                   # Login/Register
-│   ├── header.js                 # Navegación
-│   ├── main.js                   # Home
-│   ├── productosFilter.js        # Productos con filtros
-│   ├── carritoManager.js         # Carrito
-│   ├── checkoutManager.js        # Confirmación
-│   └── profile.js                # Perfil
-└── CSS/
-    └── style.css                 # Estilos
-```
-
----
+│   ├── adminPanel.js
+│   ├── apiService.js
+│   ├── auth.js
+│   ├── carritoManager.js
+│   ├── checkoutManager.js
+│   ├── header.js
+│   ├── main.js
+│   ├── navbarLoader.js
+│   ├── notif.js
+│   ├── productosFilter.js
+│   ├── profile.js
+│   └── socialFloat.js
+├── CSS/
+│   └── style.css
+├── images/
+├── robots.txt
+└── sitemap.xml
 
 ## 🚀 Instalación y Uso
 
