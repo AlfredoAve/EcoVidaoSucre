@@ -1,0 +1,78 @@
+<!-- Navbar EcoVida universal -->
+<nav class="site-header ecovida-navbar">
+  <div class="ecovida-navbar-content">
+    <div class="ecovida-navbar-section ecovida-navbar-left">
+      <a class="navbar-brand d-flex align-items-center" href="index.html">
+        <img src="../images/logo.png" alt="EcoVida logotipo" class="ecovida-logo">
+        <span class="fw-bold h4 mb-0 ms-2 ecovida-logo-text"><span class="eco-logo-eco">Eco</span><span class="eco-logo-vida">Vida</span></span>
+      </a>
+    </div>
+    <div class="ecovida-navbar-section ecovida-navbar-center">
+      <ul class="nav ecovida-nav-links">
+        <li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>
+        <li class="nav-item"><a class="nav-link" href="productos.html">Tienda</a></li>
+        <li class="nav-item"><a class="nav-link" href="categorias.html">Categorías</a></li>
+        <li class="nav-item"><a class="nav-link" href="sobre-nosotros.html">Sobre Nosotros</a></li>
+        <li class="nav-item"><a class="nav-link" href="contacto.html">Contacto</a></li>
+      </ul>
+    </div>
+    <div class="ecovida-navbar-section ecovida-navbar-right ecovida-navbar-actions">
+      <a href="carrito.html" class="btn btn-outline-success position-relative ecovida-cart-btn" aria-label="Ver carrito de compras">
+        <i data-lucide="shopping-cart"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill" id="cartCount">0</span>
+      </a>
+      <div id="userNav" class="d-inline-block ms-2">
+        <a href="login.html" class="btn btn-outline-success ecovida-user-btn" aria-label="Iniciar sesión">
+          <i data-lucide="user"></i>
+        </a>
+      </div>
+      <button class="navbar-toggler ecovida-burger" type="button" aria-label="Abrir menú" aria-expanded="false">
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Drawer móvil — FUERA del <nav> para evitar el containing-block de backdrop-filter -->
+<div class="eco-drawer-overlay" aria-hidden="true"></div>
+<div class="eco-drawer" role="dialog" aria-modal="true" aria-label="Menú de navegación" aria-hidden="true">
+  <!-- Cabecera del drawer -->
+  <div class="eco-drawer-header">
+    <a class="eco-drawer-brand" href="index.html" tabindex="-1">
+      <img src="../images/logo.png" alt="EcoVida" class="eco-drawer-logo-img">
+      <span><span class="eco-logo-eco">Eco</span><span class="eco-logo-vida">Vida</span></span>
+    </a>
+    <button class="eco-drawer-close" aria-label="Cerrar menú">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <!-- Links de navegación -->
+  <nav class="eco-drawer-nav" aria-label="Navegación principal">
+    <a href="index.html" class="eco-drawer-link">
+      <i class="bi bi-house-door"></i><span>Inicio</span>
+    </a>
+    <a href="productos.html" class="eco-drawer-link">
+      <i class="bi bi-bag"></i><span>Tienda</span>
+    </a>
+    <a href="categorias.html" class="eco-drawer-link">
+      <i class="bi bi-grid-3x3-gap"></i><span>Categorías</span>
+    </a>
+    <a href="sobre-nosotros.html" class="eco-drawer-link">
+      <i class="bi bi-people"></i><span>Sobre Nosotros</span>
+    </a>
+    <a href="contacto.html" class="eco-drawer-link">
+      <i class="bi bi-envelope"></i><span>Contacto</span>
+    </a>
+  </nav>
+
+  <!-- Acciones de usuario -->
+  <div class="eco-drawer-footer" id="userNavMobile">
+    <a href="login.html" class="btn btn-success rounded-pill fw-bold eco-drawer-login-btn">
+      <i class="bi bi-person-fill"></i> Iniciar Sesión
+    </a>
+  </div>
+</div>
+<!-- Fin Navbar EcoVida -->

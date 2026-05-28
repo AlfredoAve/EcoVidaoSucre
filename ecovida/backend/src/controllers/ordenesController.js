@@ -42,17 +42,40 @@ router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const orden = await OrdenesRepository.obtenerPorId(id);
-
     if (!orden) {
       return res.status(404).json({ error: 'Orden no encontrada' });
     }
-
     // Validar que el usuario es el propietario o es admin
     if (req.usuario.id !== orden.usuarioId && req.usuario.rol !== 'admin') {
       return res.status(403).json({ error: 'No tienes permiso para ver esta orden' });
     }
-
     res.json(orden);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ordenes/:id/factura - Descargar PDF de factura
+router.get('/:id/factura', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const orden = await OrdenesRepository.obtenerPorId(id);
+    if (!orden) {
+      return res.status(404).json({ error: 'Orden no encontrada' });
+    }
+    // Solo el dueño o admin puede descargar
+    if (req.usuario.id !== orden.usuarioId && req.usuario.rol !== 'admin') {
+      return res.status(403).json({ error: 'No tienes permiso para descargar esta factura' });
+    }
+    const facturaId = `F-${orden.id.toString().padStart(6, '0')}`;
+    const pdfPath = require('path').join(__dirname, '../../facturas', `${facturaId}.pdf`);
+    const fs = require('fs');
+    if (!fs.existsSync(pdfPath)) {
+      return res.status(404).json({ error: 'Factura no generada' });
+    }
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${facturaId}.pdf"`);
+    fs.createReadStream(pdfPath).pipe(res);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

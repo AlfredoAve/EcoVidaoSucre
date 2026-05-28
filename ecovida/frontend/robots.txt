@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /panel-admin
+Disallow: /profile
+Disallow: /carrito
+Disallow: /orden-confirmacion
+Sitemap: https://ecovida-demo.com/sitemap.xml

@@ -1,0 +1,243 @@
+// API Service - Cliente para llamadas HTTP
+const API_BASE = (() => {
+  const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  return isProduction ? '/api' : 'http://localhost:3001/api';
+})();
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+class APIService {
+  static getToken() {
+    return localStorage.getItem('token');
+  }
+
+  static setToken(token) {
+    localStorage.setItem('token', token);
+  }
+
+  static clearToken() {
+    localStorage.removeItem('token');
+  }
+
+  static getHeaders(includeAuth = true) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (includeAuth && this.getToken()) {
+      headers.Authorization = `Bearer ${this.getToken()}`;
+    }
+    return headers;
+  }
+
+  // AUTH
+  static async register(nombre, email, contrasena) {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ nombre, email, contrasena })
+    });
+    return res.json();
+  }
+
+  static async login(email, contrasena) {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ email, contrasena })
+    });
+    return res.json();
+  }
+
+  static logout() {
+    this.clearToken();
+  }
+
+  // PRODUCTOS
+  static async obtenerProductos() {
+    const res = await fetch(`${API_BASE}/productos`, {
+      headers: this.getHeaders(false)
+    });
+    return res.json();
+  }
+
+  static async obtenerProductoPorId(id) {
+    const res = await fetch(`${API_BASE}/productos/${id}`, {
+      headers: this.getHeaders(false)
+    });
+    return res.json();
+  }
+
+  static async obtenerProductosPorCategoria(categoriaId) {
+    const res = await fetch(`${API_BASE}/productos/categoria/${categoriaId}`, {
+      headers: this.getHeaders(false)
+    });
+    return res.json();
+  }
+
+  static async buscarProductos(termino) {
+    const res = await fetch(`${API_BASE}/productos/buscar/${termino}`, {
+      headers: this.getHeaders(false)
+    });
+    return res.json();
+  }
+
+  // CATEGORÍAS
+  static async obtenerCategorias() {
+    const res = await fetch(`${API_BASE}/categorias`, {
+      headers: this.getHeaders(false)
+    });
+    return res.json();
+  }
+
+  static async obtenerCategoriaPorId(id) {
+    const res = await fetch(`${API_BASE}/categorias/${id}`, {
+      headers: this.getHeaders(false)
+    });
+    return res.json();
+  }
+
+  // CARRITO
+  static async obtenerCarrito() {
+    const res = await fetch(`${API_BASE}/carrito`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async agregarAlCarrito(productoId, cantidad) {
+    const res = await fetch(`${API_BASE}/carrito`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ productoId, cantidad })
+    });
+    return res.json();
+  }
+
+  static async actualizarCarrito(productoId, cantidad) {
+    const res = await fetch(`${API_BASE}/carrito/${productoId}`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ cantidad })
+    });
+    return res.json();
+  }
+
+  static async eliminarDelCarrito(productoId) {
+    const res = await fetch(`${API_BASE}/carrito/${productoId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async vaciarCarrito() {
+    const res = await fetch(`${API_BASE}/carrito`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  // ÓRDENES
+  static async crearOrden(direccionEnvio) {
+    const res = await fetch(`${API_BASE}/ordenes`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ direccionEnvio })
+    });
+    return res.json();
+  }
+
+  static async obtenerMisOrdenes() {
+    const res = await fetch(`${API_BASE}/ordenes`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async obtenerOrdenPorId(id) {
+    const res = await fetch(`${API_BASE}/ordenes/${id}`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  // RESEÑAS
+  static async obtenerResenasProducto(productoId) {
+    const res = await fetch(`${API_BASE}/resenas/producto/${productoId}`, {
+      headers: this.getHeaders(false)
+    });
+    return res.json();
+  }
+
+  static async crearResena(productoId, calificacion, comentario = '') {
+    const res = await fetch(`${API_BASE}/resenas`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ productoId, calificacion, comentario })
+    });
+    return res.json();
+  }
+
+  static async obtenerMisResenas() {
+    const res = await fetch(`${API_BASE}/resenas`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  // USUARIO
+  static async obtenerPerfil() {
+    const res = await fetch(`${API_BASE}/users/perfil`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async actualizarPerfil(datos) {
+    const res = await fetch(`${API_BASE}/users/perfil`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify(datos)
+    });
+    return res.json();
+  }
+
+  // FAVORITOS
+  static async obtenerFavoritos() {
+    const res = await fetch(`${API_BASE}/favoritos`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async obtenerFavoritosIds() {
+    const res = await fetch(`${API_BASE}/favoritos/ids`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async agregarFavorito(productoId) {
+    const res = await fetch(`${API_BASE}/favoritos`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ productoId })
+    });
+    return res.json();
+  }
+
+  static async eliminarFavorito(productoId) {
+    const res = await fetch(`${API_BASE}/favoritos/${productoId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+}

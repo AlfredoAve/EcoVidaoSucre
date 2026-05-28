@@ -1,0 +1,579 @@
+﻿<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Panel de administración | EcoVida</title>
+<meta content="noindex, nofollow" name="robots"/>
+<!-- Google Analytics 4 -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-FJ2FEMMR94"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FJ2FEMMR94');
+  </script>
+<!-- Search Console — activar cuando se verifique -->
+<!-- <meta name="google-site-verification" content="PENDIENTE_CODIGO_VERIFICACION"/> -->
+<!-- Meta Pixel — activar cuando se tenga el ID -->
+<!--
+  <script>
+    fbq('init', 'PENDIENTE_PIXEL_ID');
+    fbq('track', 'PageView');
+  </script>
+  -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../CSS/style.css" rel="stylesheet"/>
+</head>
+<body class="eco-panel-page eco-admin-page">
+<div id="navbar-container"></div>
+<script src="../js/navbarLoader.js"></script>
+
+<!-- Header -->
+<nav class="navbar navbar-dark eco-admin-topbar">
+<div class="container-fluid">
+<span class="navbar-brand mb-0 h1">
+<i class="bi bi-gear"></i> Panel Admin - EcoVida
+      </span>
+<div class="d-flex gap-2">
+<button aria-controls="adminSidebarOffcanvas" class="btn btn-outline-light btn-sm d-md-none" data-bs-target="#adminSidebarOffcanvas" data-bs-toggle="offcanvas" type="button">
+<i class="bi bi-list"></i>
+</button>
+<span class="text-white" id="adminName"></span>
+<button class="btn btn-outline-light btn-sm" id="logoutBtn">
+<i class="bi bi-box-arrow-right"></i> Salir
+        </button>
+</div>
+</div>
+</nav>
+<div aria-labelledby="adminSidebarOffcanvasLabel" class="offcanvas offcanvas-start eco-panel-offcanvas" id="adminSidebarOffcanvas" tabindex="-1">
+<div class="offcanvas-header">
+<h5 class="offcanvas-title" id="adminSidebarOffcanvasLabel">Panel Admin</h5>
+<button aria-label="Cerrar" class="btn-close" data-bs-dismiss="offcanvas" type="button"></button>
+</div>
+<div class="offcanvas-body">
+<nav aria-label="Secciones del panel" class="nav flex-column gap-2">
+<a class="nav-link tab-link eco-sidebar-link active" data-bs-dismiss="offcanvas" data-tab="dashboard" href="#">
+<i class="bi bi-graph-up"></i> Dashboard
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="productos" href="#">
+<i class="bi bi-bag"></i> Gestionar Productos
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="categorias" href="#">
+<i class="bi bi-list"></i> Gestionar Categorías
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="ordenes" href="#">
+<i class="bi bi-receipt"></i> Órdenes
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="usuarios" href="#">
+<i class="bi bi-people"></i> Usuarios
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="base-datos" href="#">
+<i class="bi bi-database"></i> Base de datos
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="mensajes" href="#">
+<i class="bi bi-envelope"></i> Mensajes
+        </a>
+</nav>
+</div>
+</div>
+<div class="container-fluid mt-5 pt-5 eco-admin-panel">
+<div class="row">
+<!-- Sidebar -->
+<div class="col-md-3 admin-sidebar ps-0 eco-sidebar">
+<nav aria-label="Secciones del panel" class="nav flex-column p-3">
+<a class="nav-link active tab-link eco-sidebar-link" data-tab="dashboard" href="#">
+<i class="bi bi-graph-up"></i> Dashboard
+          </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="productos" href="#">
+<i class="bi bi-bag"></i> Gestionar Productos
+          </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="categorias" href="#">
+<i class="bi bi-list"></i> Gestionar Categorías
+          </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="ordenes" href="#">
+<i class="bi bi-receipt"></i> Órdenes
+          </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="usuarios" href="#">
+<i class="bi bi-people"></i> Usuarios
+          </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="base-datos" href="#">
+<i class="bi bi-database"></i> Base de datos
+          </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="mensajes" href="#">
+<i class="bi bi-envelope"></i> Mensajes
+          </a>
+</nav>
+</div>
+<!-- Contenido -->
+<div class="col-md-9">
+<div class="eco-panel-head">
+<div>
+<h1 class="eco-panel-title">Panel de administración</h1>
+<p class="eco-panel-subtitle">Control total de inventario, ventas y usuarios.</p>
+</div>
+<div class="eco-panel-chip"><i class="bi bi-shield-check"></i> Admin EcoVida</div>
+</div>
+<!-- Dashboard -->
+<div class="tab-content" id="dashboard-tab">
+<h2 class="fw-bold mb-4">Dashboard</h2>
+<div class="row g-4">
+<div class="col-md-3">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted eco-kpi-title">Total de Órdenes</h6>
+<h3 class="text-success fw-bold eco-kpi-value" id="totalOrdenes">0</h3>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted eco-kpi-title">Ingresos Totales</h6>
+<h3 class="text-success fw-bold eco-kpi-value">Bs <span id="ingresoTotal">0</span></h3>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted eco-kpi-title">Órdenes Completadas</h6>
+<h3 class="text-info fw-bold eco-kpi-value" id="completadas">0</h3>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted eco-kpi-title">Órdenes Pendientes</h6>
+<h3 class="text-warning fw-bold eco-kpi-value" id="pendientes">0</h3>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Productos -->
+<div class="tab-content" id="productos-tab" style="display:none;">
+<h2 class="fw-bold mb-4">Gestionar Productos</h2>
+<button class="btn btn-success mb-3" id="newProductBtn">
+<i class="bi bi-plus-circle"></i> Nuevo Producto
+          </button>
+<div class="table-responsive eco-table-wrap" id="productosList">
+<table class="table table-hover eco-admin-table">
+<thead class="table-light">
+<tr>
+<th>Nombre</th>
+<th>Categoría</th>
+<th>Precio</th>
+<th>Stock</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="productosTableBody"></tbody>
+</table>
+</div>
+</div>
+<!-- Categorías -->
+<div class="tab-content" id="categorias-tab" style="display:none;">
+<h2 class="fw-bold mb-4">Gestionar Categorías</h2>
+<button class="btn btn-success mb-3" id="newCategoryBtn">
+<i class="bi bi-plus-circle"></i> Nueva Categoría
+          </button>
+<div class="table-responsive eco-table-wrap" id="categoriasList">
+<table class="table table-hover eco-admin-table">
+<thead class="table-light">
+<tr>
+<th>Nombre</th>
+<th>Descripción</th>
+<th>Productos</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="categoriasTableBody"></tbody>
+</table>
+</div>
+</div>
+<!-- Órdenes -->
+<div class="tab-content" id="ordenes-tab" style="display:none;">
+<h2 class="fw-bold mb-4">Órdenes</h2>
+<div class="table-responsive eco-table-wrap" id="ordenesList">
+<table class="table table-hover eco-admin-table">
+<thead class="table-light">
+<tr>
+<th>ID Orden</th>
+<th>Cliente</th>
+<th>Total</th>
+<th>Estado</th>
+<th>Fecha</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="ordenesTableBody"></tbody>
+</table>
+</div>
+</div>
+<!-- Usuarios -->
+<div class="tab-content" id="usuarios-tab" style="display:none;">
+<h2 class="fw-bold mb-4">Usuarios</h2>
+<div class="table-responsive eco-table-wrap" id="usuariosList">
+<table class="table table-hover eco-admin-table">
+<thead class="table-light">
+<tr>
+<th>Nombre</th>
+<th>Email</th>
+<th>Rol</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="usuariosTableBody"></tbody>
+</table>
+</div>
+</div>
+<!-- Mensajes de Contacto -->
+<div class="tab-content" id="mensajes-tab" style="display:none;">
+<div class="d-flex align-items-center justify-content-between mb-3">
+<h2 class="fw-bold mb-0">Mensajes de contacto</h2>
+<button class="btn btn-outline-success btn-sm" id="reloadMensajesBtn">
+<i class="bi bi-arrow-clockwise"></i> Recargar
+            </button>
+</div>
+<div class="table-responsive eco-table-wrap">
+<table class="table table-hover eco-admin-table">
+<thead class="table-light">
+<tr>
+<th>#</th>
+<th>Nombre</th>
+<th>Email</th>
+<th>Asunto</th>
+<th>Mensaje</th>
+<th>Fecha</th>
+</tr>
+</thead>
+<tbody id="mensajesTableBody"></tbody>
+</table>
+</div>
+</div>
+<!-- Base de datos -->
+<div class="tab-content" id="base-datos-tab" style="display:none;">
+<div class="d-flex align-items-center justify-content-between mb-3">
+<h2 class="fw-bold mb-0">Base de datos</h2>
+<button class="btn btn-outline-success btn-sm" id="reloadDbBtn">
+<i class="bi bi-arrow-clockwise"></i> Recargar
+            </button>
+</div>
+<p class="text-muted">Resumen y limpieza de registros (activos e inactivos).</p>
+<div class="row g-3 mb-4">
+<div class="col-md-4">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted">Productos</h6>
+<div class="d-flex gap-3 mt-2">
+<span>Total: <strong id="dbProductosTotal">0</strong></span>
+<span>Activos: <strong id="dbProductosActivos">0</strong></span>
+<span>Inactivos: <strong id="dbProductosInactivos">0</strong></span>
+</div>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted">Categorías</h6>
+<div class="d-flex gap-3 mt-2">
+<span>Total: <strong id="dbCategoriasTotal">0</strong></span>
+<span>Activas: <strong id="dbCategoriasActivas">0</strong></span>
+<span>Inactivas: <strong id="dbCategoriasInactivas">0</strong></span>
+</div>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted">Usuarios</h6>
+<div class="d-flex gap-3 mt-2">
+<span>Total: <strong id="dbUsuariosTotal">0</strong></span>
+<span>Activos: <strong id="dbUsuariosActivos">0</strong></span>
+<span>Inactivos: <strong id="dbUsuariosInactivos">0</strong></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mb-4">
+<h5 class="fw-bold">Productos (todos)</h5>
+<div class="table-responsive eco-table-wrap">
+<table class="table table-hover table-sm eco-admin-table">
+<thead class="table-light">
+<tr><th>ID</th><th>Nombre</th><th>Estado</th><th>Acciones</th></tr>
+</thead>
+<tbody id="dbProductosTableBody"></tbody>
+</table>
+</div>
+</div>
+<div>
+<h5 class="fw-bold">Categorías (todas)</h5>
+<div class="table-responsive eco-table-wrap">
+<table class="table table-hover table-sm eco-admin-table">
+<thead class="table-light">
+<tr><th>ID</th><th>Nombre</th><th>Estado</th><th>Acciones</th></tr>
+</thead>
+<tbody id="dbCategoriasTableBody"></tbody>
+</table>
+</div>
+</div>
+<div class="mt-4">
+<h5 class="fw-bold">Usuarios (todos)</h5>
+<div class="table-responsive eco-table-wrap">
+<table class="table table-hover table-sm eco-admin-table">
+<thead class="table-light">
+<tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th></tr>
+</thead>
+<tbody id="dbUsuariosTableBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Producto -->
+<div class="modal fade" id="productModal" tabindex="-1">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header bg-success text-white">
+<h5 class="modal-title" id="productModalTitle">Nuevo Producto</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<form id="productForm">
+<div class="modal-body">
+<div class="mb-3">
+<label class="form-label" for="prodNombre">Nombre</label>
+<input class="form-control" id="prodNombre" required="" type="text"/>
+</div>
+<div class="mb-3">
+<label class="form-label" for="prodDesc">Descripción</label>
+<textarea class="form-control" id="prodDesc" rows="3"></textarea>
+</div>
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label" for="prodPrecio">Precio</label>
+<input class="form-control" id="prodPrecio" required="" step="0.01" type="number"/>
+</div>
+<div class="col-md-6 mb-3">
+<label class="form-label" for="prodStock">Stock</label>
+<input class="form-control" id="prodStock" required="" type="number"/>
+</div>
+</div>
+<div class="mb-3">
+<label class="form-label" for="prodCategoria">Categoría</label>
+<select class="form-control" id="prodCategoria" required="">
+<option value="">Seleccionar...</option>
+</select>
+</div>
+<div class="mb-3">
+<label class="form-label" for="prodImagenFile">Imagen (archivo)</label>
+<input accept="image/*" class="form-control" id="prodImagenFile" type="file"/>
+<div class="form-text">Maximo 2MB. Formatos: JPG, PNG, WEBP, GIF.</div>
+</div>
+<div class="mb-3">
+<label class="form-label" for="prodImagenUrl">Imagen (URL)</label>
+<input class="form-control" id="prodImagenUrl" placeholder="https://..." type="text"/>
+<div class="form-text">Si subes archivo, se usa el archivo y se ignora la URL.</div>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+<button class="btn btn-success" type="submit">Guardar</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<!-- Modal Categoría -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header bg-success text-white">
+<h5 class="modal-title" id="categoryModalTitle">Nueva Categoría</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<form id="categoryForm">
+<div class="modal-body">
+<div class="mb-3">
+<label class="form-label" for="catNombre">Nombre</label>
+<input class="form-control" id="catNombre" required="" type="text"/>
+</div>
+<div class="mb-3">
+<label class="form-label" for="catDesc">Descripción</label>
+<textarea class="form-control" id="catDesc" rows="3"></textarea>
+</div>
+<div class="mb-3">
+<label class="form-label" for="catImagenFile">Imagen (archivo)</label>
+<input accept="image/*" class="form-control" id="catImagenFile" type="file"/>
+<div class="form-text">Maximo 2MB. Formatos: JPG, PNG, WEBP, GIF.</div>
+</div>
+<div class="mb-3">
+<label class="form-label" for="catImagenUrl">Imagen (URL)</label>
+<input class="form-control" id="catImagenUrl" placeholder="https://..." type="text"/>
+<div class="form-text">Si subes archivo, se usa el archivo y se ignora la URL.</div>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+<button class="btn btn-success" type="submit">Guardar</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<!-- Modal Detalle de Orden -->
+<div aria-hidden="true" class="modal fade" id="orderDetailModal" tabindex="-1">
+<div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title" id="orderDetailTitle">Detalle de Orden</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body">
+<div class="mb-3">
+<div><strong>Cliente:</strong> <span id="orderDetailClient">-</span></div>
+<div><strong>Email:</strong> <span id="orderDetailEmail">-</span></div>
+<div><strong>Dirección:</strong> <span id="orderDetailAddress">-</span></div>
+</div>
+<div class="table-responsive">
+<table class="table table-sm table-striped align-middle">
+<thead>
+<tr><th>#</th><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr>
+</thead>
+<tbody id="orderDetailProductsBody"></tbody>
+</table>
+</div>
+<div class="text-end">
+<strong>Total:</strong>
+<span class="text-success fw-bold" id="orderDetailTotal">Bs 0.00</span>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cerrar</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Confirmar Orden -->
+<div aria-hidden="true" class="modal fade" id="confirmOrderModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header bg-success text-white">
+<h5 class="modal-title">Confirmar Orden</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body">
+<p class="mb-0" id="confirmOrderMessage">¿Deseas confirmar esta orden?</p>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+<button class="btn btn-success" id="confirmOrderActionBtn" type="button">Sí, Confirmar</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Completar Orden -->
+<div aria-hidden="true" class="modal fade" id="completeOrderModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header bg-dark text-white">
+<h5 class="modal-title">Completar Orden</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body">
+<p class="mb-0" id="completeOrderMessage">¿Marcar esta orden como completada y lista para cierre?</p>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+<button class="btn btn-dark" id="completeOrderActionBtn" type="button">Sí, Completar</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Marcar Enviada -->
+<div aria-hidden="true" class="modal fade" id="shippedOrderModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title">Marcar como Enviada</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body">
+<p class="mb-0" id="shippedOrderMessage">¿Marcar esta orden como enviada?</p>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+<button class="btn btn-primary" id="shippedOrderActionBtn" type="button"><i class="bi bi-truck"></i> Sí, Enviada</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Marcar Entregada -->
+<div aria-hidden="true" class="modal fade" id="deliveredOrderModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header bg-success text-white">
+<h5 class="modal-title">Marcar como Entregada</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body">
+<p class="mb-0" id="deliveredOrderMessage">¿Marcar esta orden como entregada?</p>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+<button class="btn btn-success" id="deliveredOrderActionBtn" type="button"><i class="bi bi-check2-all"></i> Sí, Entregada</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Toast container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index:1100;"></div>
+<!-- Modal confirmar acción genérica -->
+<div class="modal fade" id="genericConfirmModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header bg-danger text-white">
+<h5 class="modal-title">Confirmar acción</h5>
+<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body">
+<p class="mb-0" id="genericConfirmMessage">¿Estás seguro?</p>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+<button class="btn btn-danger" id="genericConfirmActionBtn" type="button">Confirmar</button>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/apiService.js"></script><script src="../js/header.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/adminPanel.js"></script>
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+  (function(){
+    var s1=document.createElement("script"),
+        s0=document.getElementsByTagName("script")[0];
+    s1.async=true;
+    s1.src='https://embed.tawk.to/6a053c3d1ba64a1c35e55473/1joi76kg7';
+    s1.charset='UTF-8';
+    s1.setAttribute('crossorigin','*');
+    s0.parentNode.insertBefore(s1,s0);
+  })();
+  </script>
+<!--End of Tawk.to Script-->
+<script src="../js/socialFloat.js"></script>
+</body>
+</html>

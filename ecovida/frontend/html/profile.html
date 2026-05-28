@@ -1,0 +1,258 @@
+﻿<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mi perfil | EcoVida</title>
+<meta content="Gestiona tu cuenta, pedidos y datos personales en EcoVida." name="description"/>
+<!-- Google Analytics 4 -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-FJ2FEMMR94"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FJ2FEMMR94');
+  </script>
+<!-- Search Console — activar cuando se verifique -->
+<!-- <meta name="google-site-verification" content="PENDIENTE_CODIGO_VERIFICACION"/> -->
+<!-- Meta Pixel — activar cuando se tenga el ID -->
+<!--
+  <script>
+    fbq('init', 'PENDIENTE_PIXEL_ID');
+    fbq('track', 'PageView');
+  </script>
+  -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../CSS/style.css" rel="stylesheet"/>
+</head>
+<body class="eco-panel-page">
+<div id="navbar-container"></div>
+<script src="../js/navbarLoader.js"></script>
+<main class="container mt-5 pt-5 eco-panel eco-profile">
+<div class="eco-panel-head">
+<div>
+<h1 class="eco-panel-title">Mi cuenta</h1>
+<p class="eco-panel-subtitle">Gestiona tu perfil, pedidos y reseñas en un solo lugar.</p>
+</div>
+<div class="eco-panel-chip"><i class="bi bi-leaf"></i> Cliente EcoVida</div>
+</div>
+<div class="d-lg-none mb-3">
+<button aria-controls="profileMenuOffcanvas" class="btn btn-outline-success w-100 eco-panel-menu-btn" data-bs-target="#profileMenuOffcanvas" data-bs-toggle="offcanvas" type="button">
+<i class="bi bi-list"></i> Secciones del perfil
+      </button>
+</div>
+<div class="row">
+<!-- Menú lateral -->
+<div class="col-lg-3">
+<div class="card shadow-sm eco-sidebar">
+<div class="card-body">
+<div class="text-center mb-4">
+<div aria-hidden="true" class="eco-avatar">
+<i class="bi bi-person"></i>
+</div>
+<h5 class="fw-bold" id="userName">Usuario</h5>
+<p class="text-muted small" id="userEmail">email@example.com</p>
+</div>
+<hr/>
+<nav aria-label="Secciones del perfil" class="nav flex-column gap-2">
+<a class="nav-link tab-link eco-sidebar-link active" data-tab="perfil" href="#">
+<i class="bi bi-person-check"></i> Mi Perfil
+              </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="ordenes" href="#">
+<i class="bi bi-bag-check"></i> Mis Órdenes
+              </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="resenas" href="#">
+<i class="bi bi-star"></i> Mis Reseñas
+              </a>
+<a class="nav-link tab-link eco-sidebar-link" data-tab="favoritos" href="#">
+<i class="bi bi-heart"></i> Favoritos
+              </a>
+</nav>
+</div>
+</div>
+</div>
+<!-- Contenido -->
+<div class="col-lg-9">
+<!-- Pestaña: Perfil -->
+<div class="tab-content" id="perfil-tab">
+<div class="card shadow-sm eco-card">
+<div class="card-header eco-card-header">
+<h5 class="mb-0"><i class="bi bi-person-check"></i> Mi Información</h5>
+</div>
+<div class="card-body eco-card-body">
+<form id="profileForm">
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label" for="nombre">Nombre Completo</label>
+<input class="form-control" id="nombre" required="" type="text"/>
+</div>
+<div class="col-md-6 mb-3">
+<label class="form-label" for="email">Email</label>
+<input class="form-control" disabled="" id="email" type="email"/>
+</div>
+</div>
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label" for="telefono">Teléfono</label>
+<input class="form-control" id="telefono" type="tel"/>
+</div>
+<div class="col-md-6 mb-3">
+<label class="form-label" for="ciudad">Ciudad</label>
+<input class="form-control" id="ciudad" type="text"/>
+</div>
+</div>
+<div class="mb-3">
+<label class="form-label" for="direccion">Dirección</label>
+<textarea class="form-control" id="direccion" rows="3"></textarea>
+</div>
+<button class="btn btn-success" type="submit">
+<i class="bi bi-check-circle"></i> Guardar Cambios
+                </button>
+</form>
+<div class="alert alert-success mt-3" id="successMsg" style="display:none;"></div>
+<div class="alert alert-danger mt-3" id="errorMsg" style="display:none;"></div>
+</div>
+</div>
+</div>
+<!-- Pestaña: Órdenes -->
+<div class="tab-content" id="ordenes-tab" style="display:none;">
+<div class="card shadow-sm eco-card">
+<div class="card-header eco-card-header">
+<h5 class="mb-0"><i class="bi bi-bag-check"></i> Mis Órdenes</h5>
+</div>
+<div class="card-body eco-card-body">
+<div id="ordenesList"></div>
+</div>
+</div>
+</div>
+<!-- Pestaña: Reseñas -->
+<div class="tab-content" id="resenas-tab" style="display:none;">
+<div class="card shadow-sm eco-card">
+<div class="card-header eco-card-header">
+<h5 class="mb-0"><i class="bi bi-star"></i> Mis Reseñas</h5>
+</div>
+<div class="card-body eco-card-body">
+<div id="resenasList"></div>
+</div>
+</div>
+</div>
+<!-- Pestaña: Favoritos -->
+<div class="tab-content" id="favoritos-tab" style="display:none;">
+<div class="card shadow-sm eco-card">
+<div class="card-header eco-card-header">
+<h5 class="mb-0"><i class="bi bi-heart"></i> Mis Favoritos</h5>
+</div>
+<div class="card-body eco-card-body">
+<div id="favoritosList"></div>
+<div class="text-center py-5" id="favoritosEmpty" style="display:none;">
+<i class="bi bi-heart" style="font-size:3rem;color:#ddd;"></i>
+<p class="text-muted mt-3 mb-1 fw-bold">Aún no tienes favoritos</p>
+<p class="text-muted small">Guarda productos con el corazón y aparecerán aquí.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<div aria-labelledby="profileMenuOffcanvasLabel" class="offcanvas offcanvas-start eco-panel-offcanvas" id="profileMenuOffcanvas" tabindex="-1">
+<div class="offcanvas-header">
+<h5 class="offcanvas-title" id="profileMenuOffcanvasLabel">Secciones</h5>
+<button aria-label="Cerrar" class="btn-close" data-bs-dismiss="offcanvas" type="button"></button>
+</div>
+<div class="offcanvas-body">
+<nav class="nav flex-column gap-2">
+<a class="nav-link tab-link eco-sidebar-link active" data-bs-dismiss="offcanvas" data-tab="perfil" href="#">
+<i class="bi bi-person-check"></i> Mi Perfil
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="ordenes" href="#">
+<i class="bi bi-bag-check"></i> Mis Órdenes
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="resenas" href="#">
+<i class="bi bi-star"></i> Mis Reseñas
+        </a>
+<a class="nav-link tab-link eco-sidebar-link" data-bs-dismiss="offcanvas" data-tab="favoritos" href="#">
+<i class="bi bi-heart"></i> Favoritos
+        </a>
+</nav>
+</div>
+</div>
+<!-- Footer -->
+<footer class="site-footer">
+<div class="container">
+<div class="row g-5">
+<div class="col-lg-4 col-md-6">
+<div class="mb-3">
+<img alt="EcoVida logotipo" class="footer-logo" src="../images/logo.png"/>
+</div>
+<p class="footer-text mb-3">Tu tienda confiable de productos naturales y orgánicos para una vida más saludable.</p>
+<div class="social-links">
+<a aria-label="Visitar Facebook de EcoVida" class="social-icon social-facebook" href="https://facebook.com/ecovidanaturalbo" title="Facebook"><i class="bi bi-facebook"></i></a>
+<a aria-label="Visitar Instagram de EcoVida" class="social-icon social-instagram" href="https://www.instagram.com/ecovida.bo" title="Instagram"><i class="bi bi-instagram"></i></a>
+<a aria-label="Visitar YouTube de EcoVida" class="social-icon social-youtube" href="https://www.youtube.com/@ecovidanaturalbo" title="YouTube"><i class="bi bi-youtube"></i></a>
+<a aria-label="Visitar TikTok de EcoVida" class="social-icon social-tiktok" href="https://tiktok.com/@ecovida.naturalb" title="TikTok"><i class="bi bi-tiktok"></i></a>
+</div>
+</div>
+<div class="col-lg-2 col-md-6">
+<h6 class="footer-title">Tienda</h6>
+<ul class="list-unstyled footer-links">
+<li><a href="productos.html"><i class="bi bi-chevron-right"></i> Productos</a></li>
+<li><a href="categorias.html"><i class="bi bi-chevron-right"></i> Categorías</a></li>
+<li><a href="carrito.html"><i class="bi bi-chevron-right"></i> Mi Carrito</a></li>
+</ul>
+</div>
+<div class="col-lg-3 col-md-6">
+<h6 class="footer-title">Información</h6>
+<ul class="list-unstyled footer-links">
+<li><a href="sobre-nosotros.html"><i class="bi bi-chevron-right"></i> Sobre Nosotros</a></li>
+<li><a href="contacto.html"><i class="bi bi-chevron-right"></i> Contacto</a></li>
+<li><a href="privacidad.html"><i class="bi bi-chevron-right"></i> Privacidad</a></li>
+<li><a href="terminos.html"><i class="bi bi-chevron-right"></i> Términos</a></li>
+<li><a href="terminos.html#envios"><i class="bi bi-chevron-right"></i> Política de envíos</a></li>
+<li><a href="terminos.html#faq"><i class="bi bi-chevron-right"></i> FAQ</a></li>
+</ul>
+<div class="footer-payments">
+<span class="footer-payment-pill is-paypal"><i class="bi bi-paypal"></i> PayPal</span>
+<span class="footer-payment-pill is-transfer"><i class="bi bi-bank"></i> Transferencia</span>
+<span class="footer-payment-pill is-cod"><i class="bi bi-box-seam"></i> Contra entrega</span>
+</div>
+</div>
+<div class="col-lg-3 col-md-6">
+<h6 class="footer-title">Contacto</h6>
+<ul class="list-unstyled footer-contact">
+<li><i class="bi bi-envelope"></i> ecovida.natural1@gmail.com</li>
+<li><i class="bi bi-telephone"></i> +591 75442968</li>
+<li><i class="bi bi-geo-alt"></i> Sucre, Bolivia</li>
+</ul>
+</div>
+</div>
+<hr class="footer-divider"/>
+<div class="row">
+<div class="col-12 text-center">
+<p class="footer-copyright mb-0">© 2025 EcoVida. Todos los derechos reservados.</p>
+</div>
+</div>
+</div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
+<script src="../js/apiService.js"></script><script src="../js/notif.js"></script><script src="../js/header.js"></script>
+<script src="../js/profile.js"></script>
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+  (function(){
+    var s1=document.createElement("script"),
+        s0=document.getElementsByTagName("script")[0];
+    s1.async=true;
+    s1.src='https://embed.tawk.to/6a053c3d1ba64a1c35e55473/1joi76kg7';
+    s1.charset='UTF-8';
+    s1.setAttribute('crossorigin','*');
+    s0.parentNode.insertBefore(s1,s0);
+  })();
+  </script>
+<!--End of Tawk.to Script-->
+<script src="../js/socialFloat.js"></script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contacto | EcoVida</title>
+<meta content="Contáctanos en EcoVida. Estamos aquí para ayudarte con tus productos naturales." name="description"/>
+<!-- Google Analytics 4 -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-FJ2FEMMR94"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FJ2FEMMR94');
+  </script>
+<!-- Search Console — activar cuando se verifique -->
+<!-- <meta name="google-site-verification" content="PENDIENTE_CODIGO_VERIFICACION"/> -->
+<!-- Meta Pixel — activar cuando se tenga el ID -->
+<!--
+  <script>
+    fbq('init', 'PENDIENTE_PIXEL_ID');
+    fbq('track', 'PageView');
+  </script>
+  -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../CSS/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="navbar-container"></div>
+<script src="../js/navbarLoader.js"></script>
+
+<main class="mt-5 pt-5">
+<!-- Hero -->
+<section class="py-5 bg-light">
+<div class="container text-center">
+<h1 class="display-5 fw-bold mb-3">Contáctanos</h1>
+<p class="lead text-muted">¿Tienes alguna pregunta? Estamos aquí para ayudarte.</p>
+</div>
+</section>
+<section class="py-5">
+<div class="container">
+<div class="row g-5">
+<!-- Formulario -->
+<div class="col-lg-7">
+<div class="card shadow-sm border-0">
+<div class="card-body p-4">
+<h4 class="fw-bold mb-4">Envíanos un mensaje</h4>
+<form id="contactForm">
+<div class="mb-3">
+<label class="form-label" for="contactNombre">Nombre completo</label>
+<input class="form-control" id="contactNombre" placeholder="Juan Pérez" required="" type="text"/>
+</div>
+<div class="mb-3">
+<label class="form-label" for="contactEmail">Email</label>
+<input class="form-control" id="contactEmail" placeholder="tu@email.com" required="" type="email"/>
+</div>
+<div class="mb-3">
+<label class="form-label" for="contactAsunto">Asunto</label>
+<input class="form-control" id="contactAsunto" placeholder="¿En qué podemos ayudarte?" required="" type="text"/>
+</div>
+<div class="mb-4">
+<label class="form-label" for="contactMensaje">Mensaje</label>
+<textarea class="form-control" id="contactMensaje" placeholder="Escribe tu mensaje aquí..." required="" rows="5"></textarea>
+</div>
+<button class="btn btn-success w-100 py-2 fw-bold" id="contactSubmitBtn" type="submit">
+<i class="bi bi-send"></i> Enviar Mensaje
+                  </button>
+</form>
+<div class="alert alert-success mt-3" id="contactSuccess" style="display:none;">
+<i class="bi bi-check-circle"></i> Mensaje enviado. Te responderemos pronto.
+                </div>
+<div class="alert alert-danger mt-3" id="contactError" style="display:none;"></div>
+</div>
+</div>
+</div>
+<!-- Información de contacto -->
+<div class="col-lg-5">
+<h4 class="fw-bold mb-4">Información de contacto</h4>
+<div class="d-flex gap-3 mb-4">
+<div aria-hidden="true" class="text-success flex-shrink-0" style="font-size:1.5rem;">
+<i class="bi bi-telephone-fill"></i>
+</div>
+<div>
+<h6 class="fw-bold mb-1">Teléfono / WhatsApp</h6>
+<p class="text-muted mb-0">+591 75442968</p>
+</div>
+</div>
+<div class="d-flex gap-3 mb-4">
+<div aria-hidden="true" class="text-success flex-shrink-0" style="font-size:1.5rem;">
+<i class="bi bi-envelope-fill"></i>
+</div>
+<div>
+<h6 class="fw-bold mb-1">Email</h6>
+<p class="text-muted mb-0">ecovida.natural1@gmail.com</p>
+</div>
+</div>
+<div class="d-flex gap-3 mb-4">
+<div aria-hidden="true" class="text-success flex-shrink-0" style="font-size:1.5rem;">
+<i class="bi bi-geo-alt-fill"></i>
+</div>
+<div>
+<h6 class="fw-bold mb-1">Dirección</h6>
+<p class="text-muted mb-0">Sucre, Chuquisaca, Bolivia</p>
+</div>
+</div>
+<div class="d-flex gap-3 mb-4">
+<div aria-hidden="true" class="text-success flex-shrink-0" style="font-size:1.5rem;">
+<i class="bi bi-clock-fill"></i>
+</div>
+<div>
+<h6 class="fw-bold mb-1">Horario de atención</h6>
+<p class="text-muted mb-0">Lunes a Viernes: 8:00 – 18:00<br/>Sábados: 8:00 – 13:00</p>
+</div>
+</div>
+<!-- Mapa opcional -->
+<div class="ratio ratio-4x3 rounded overflow-hidden" id="mapContainer" style="display:none;">
+<!-- ⚠️REEMPLAZAR: descomenta y pega el embed de Google Maps -->
+<!-- <iframe src="⚠️REEMPLAZAR:EMBED_URL_GOOGLE_MAPS" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Ubicación EcoVida en Google Maps"></iframe> -->
+</div>
+<hr/>
+<h6 class="fw-bold mb-3">Síguenos</h6>
+<div class="social-links">
+<a aria-label="Facebook de EcoVida" class="social-icon me-2" href="https://facebook.com/ecovidanaturalbo" style="background:#1877F2;color:#fff;border-radius:50%;padding:8px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;"><i class="bi bi-facebook"></i></a>
+<a aria-label="Instagram de EcoVida" class="social-icon me-2" href="https://www.instagram.com/ecovida.bo" style="background:#E1306C;color:#fff;border-radius:50%;padding:8px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;"><i class="bi bi-instagram"></i></a>
+<a aria-label="YouTube de EcoVida" class="social-icon me-2" href="https://www.youtube.com/@ecovidanaturalbo" style="background:#FF0000;color:#fff;border-radius:50%;padding:8px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;"><i class="bi bi-youtube"></i></a>
+<a aria-label="TikTok de EcoVida" class="social-icon" href="https://tiktok.com/@ecovida.naturalb" style="background:#000000;color:#fff;border-radius:50%;padding:8px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;"><i class="bi bi-tiktok"></i></a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="site-footer">
+<div class="container">
+<div class="row g-5">
+<div class="col-lg-4 col-md-6">
+<div class="mb-3">
+<img alt="EcoVida logotipo" class="footer-logo" src="../images/logo.png"/>
+</div>
+<p class="footer-text mb-3">Tu tienda confiable de productos naturales y orgánicos para una vida más saludable.</p>
+<div class="social-links">
+<a aria-label="Facebook" class="social-icon social-facebook" href="https://facebook.com/ecovidanaturalbo" title="Facebook"><i class="bi bi-facebook"></i></a>
+<a aria-label="Instagram" class="social-icon social-instagram" href="https://www.instagram.com/ecovida.bo" title="Instagram"><i class="bi bi-instagram"></i></a>
+<a aria-label="YouTube" class="social-icon social-youtube" href="https://www.youtube.com/@ecovidanaturalbo" title="YouTube"><i class="bi bi-youtube"></i></a>
+<a aria-label="TikTok" class="social-icon social-tiktok" href="https://tiktok.com/@ecovida.naturalb" title="TikTok"><i class="bi bi-tiktok"></i></a>
+</div>
+</div>
+<div class="col-lg-2 col-md-6">
+<h6 class="footer-title">Tienda</h6>
+<ul class="list-unstyled footer-links">
+<li><a href="productos.html"><i class="bi bi-chevron-right"></i> Productos</a></li>
+<li><a href="categorias.html"><i class="bi bi-chevron-right"></i> Categorías</a></li>
+<li><a href="carrito.html"><i class="bi bi-chevron-right"></i> Mi Carrito</a></li>
+</ul>
+</div>
+<div class="col-lg-3 col-md-6">
+<h6 class="footer-title">Información</h6>
+<ul class="list-unstyled footer-links">
+<li><a href="sobre-nosotros.html"><i class="bi bi-chevron-right"></i> Sobre Nosotros</a></li>
+<li><a href="contacto.html"><i class="bi bi-chevron-right"></i> Contacto</a></li>
+<li><a href="privacidad.html"><i class="bi bi-chevron-right"></i> Privacidad</a></li>
+<li><a href="terminos.html"><i class="bi bi-chevron-right"></i> Términos</a></li>
+<li><a href="terminos.html#envios"><i class="bi bi-chevron-right"></i> Política de envíos</a></li>
+<li><a href="terminos.html#faq"><i class="bi bi-chevron-right"></i> FAQ</a></li>
+</ul>
+<div class="footer-payments">
+<span class="footer-payment-pill is-paypal"><i class="bi bi-paypal"></i> PayPal</span>
+<span class="footer-payment-pill is-transfer"><i class="bi bi-bank"></i> Transferencia</span>
+<span class="footer-payment-pill is-cod"><i class="bi bi-box-seam"></i> Contra entrega</span>
+</div>
+</div>
+<div class="col-lg-3 col-md-6">
+<h6 class="footer-title">Contacto</h6>
+<ul class="list-unstyled footer-contact">
+<li><i class="bi bi-envelope"></i> contacto@ecovida.com</li>
+<li><i class="bi bi-telephone"></i> +591 75442968</li>
+<li><i class="bi bi-geo-alt"></i> Sucre, Bolivia</li>
+</ul>
+</div>
+</div>
+<hr class="footer-divider"/>
+<div class="row">
+<div class="col-12 text-center">
+<p class="footer-copyright mb-0">© 2025 EcoVida. Todos los derechos reservados.</p>
+</div>
+</div>
+</div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
+<script src="../js/apiService.js"></script>
+<script src="../js/header.js"></script>
+<script>
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('contactSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Enviando...';
+
+      const body = {
+        nombre: document.getElementById('contactNombre').value.trim(),
+        email: document.getElementById('contactEmail').value.trim(),
+        asunto: document.getElementById('contactAsunto').value.trim(),
+        mensaje: document.getElementById('contactMensaje').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/contacto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('contactSuccess').style.display = 'block';
+          document.getElementById('contactError').style.display = 'none';
+          document.getElementById('contactForm').reset();
+        } else {
+          throw new Error(data.error || 'Error al enviar el mensaje');
+        }
+      } catch (err) {
+        const errEl = document.getElementById('contactError');
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send"></i> Enviar Mensaje';
+      }
+    });
+  </script>
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+  (function(){
+    var s1=document.createElement("script"),
+        s0=document.getElementsByTagName("script")[0];
+    s1.async=true;
+    s1.src='https://embed.tawk.to/6a053c3d1ba64a1c35e55473/1joi76kg7';
+    s1.charset='UTF-8';
+    s1.setAttribute('crossorigin','*');
+    s0.parentNode.insertBefore(s1,s0);
+  })();
+  </script>
+<!--End of Tawk.to Script-->
+<script src="../js/socialFloat.js"></script>
+</body>
+</html>

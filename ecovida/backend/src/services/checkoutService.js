@@ -111,16 +111,27 @@ class CheckoutService {
   static async procesarPago(usuarioId, direccionEnvio) {
     try {
       const ordenData = await this.crearOrdenDesdeCarrito(usuarioId, direccionEnvio);
-
+      const orden = await OrdenesRepository.obtenerPorId(ordenData.ordenId);
+      // Obtener usuario
+      const UserRepository = require('../repositories/userRepository');
+      const usuario = await UserRepository.obtenerPorId(orden.usuarioId);
+      // Generar PDF de factura
+      const { generarFacturaPDF } = require('./facturaService');
+      const logoPath = require('path').join(__dirname, '../../frontend/images/logo.png');
+      await generarFacturaPDF({
+        orden: { ...orden, id: orden.id, fecha: orden.fechaCreacion },
+        usuario,
+        productos: orden.productos,
+        metodoPago: orden.metodoPago,
+        logoPath
+      });
       if (MERCADOPAGO_TOKEN) {
-        const orden = await OrdenesRepository.obtenerPorId(ordenData.ordenId);
         const linkPago = await this.crearPreferenciaMP({
           ordenId: ordenData.ordenId,
           ...orden
         });
         return { ...ordenData, linkPago };
       }
-
       return ordenData;
     } catch (error) {
       throw error;
