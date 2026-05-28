@@ -18,21 +18,22 @@ function escapeHtml(str) {
 }
 
 function getImageUrl(ruta) {
-  if (!ruta) return 'images/producto-default.svg';
+  // 1. Si no hay ruta o es el default fallido, asegurar el placeholder para evitar 404
+  if (!ruta || ruta.includes('producto-default.svg')) return 'https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';
+  
   if (ruta.startsWith('http')) return ruta;
   
-  // Si es un SVG o imagen por defecto de los datos de prueba (seed)
-  if (ruta.includes('producto-') || ruta.includes('default')) {
-    const partes = ruta.split('/');
-    const nombreArchivo = partes[partes.length - 1];
+  const partes = ruta.split('/');
+  const nombreArchivo = partes[partes.length - 1];
+
+  // 2. Si la imagen pertenece a la carpeta frontend/images/ o son datos de prueba (SVG)
+  if (ruta.includes('images/') || ruta.includes('producto-')) {
     return `images/${nombreArchivo}`;
   }
 
-  // Si es un archivo local del backend, construimos la ruta completa
+  // 3. Imágenes nuevas subidas desde el Panel Admin van a la carpeta de tu servidor (Local o Render)
   const baseUrl = API_BASE.replace('/api', '');
-  const partes2 = ruta.split('/');
-  const nombreArchivoSubido = partes2[partes2.length - 1];
-  return `${baseUrl}/uploads/${nombreArchivoSubido}`;
+  return `${baseUrl}/uploads/${nombreArchivo}`;
 }
 
 class APIService {

@@ -202,7 +202,7 @@ function renderizarTablaProductos() {
         <td>
           <div class="d-flex align-items-center gap-2">
             ${prod.imagen
-              ? `<img src="${APIService.getImageUrl(prod.imagen)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;" alt="" onerror="this.src='images/producto-default.svg';this.onerror=null;">`
+              ? `<img src="${APIService.getImageUrl(prod.imagen)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;" alt="" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">`
               : `<div style="width:38px;height:38px;background:#e9ecef;border-radius:6px;"></div>`}
             <strong>${escapeHtml(prod.nombre)}</strong>
           </div>

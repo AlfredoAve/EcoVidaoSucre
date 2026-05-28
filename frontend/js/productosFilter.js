@@ -219,7 +219,7 @@ function renderizarProductos(productos) {
             <img src="${APIService.getImageUrl(prod.imagen)}"
                  class="card-img-top eco-card-img"
                  alt="${escapeHtml(prod.nombre)}"
-                 onerror="this.src='images/producto-default.svg';this.onerror=null;">
+                 onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             <button class="fav-btn ${esFavorito ? 'active' : ''}" type="button" data-product-id="${prod.id}" aria-label="Favorito">
               <i class="bi ${esFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i>
             </button>
@@ -265,7 +265,7 @@ async function abrirProducto(productoId) {
     document.getElementById('productTitle').textContent = productoSeleccionado.nombre;
     const imgEl = document.getElementById('productImage');
     imgEl.src = APIService.getImageUrl(productoSeleccionado.imagen);
-    imgEl.onerror = function() { this.src = 'images/producto-default.svg'; this.onerror = null; };
+    imgEl.onerror = function() { this.src = 'https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen'; this.onerror = null; };
     document.getElementById('productDesc').textContent = productoSeleccionado.descripcion || '';
     document.getElementById('productPrice').textContent = productoSeleccionado.precio.toFixed(2);
     document.getElementById('productStock').textContent = stock;

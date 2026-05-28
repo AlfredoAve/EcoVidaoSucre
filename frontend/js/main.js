@@ -64,7 +64,7 @@ async function cargarCategorias() {
                    class="card-img-top"
                    style="height:200px;object-fit:cover;"
                    alt="${escapeHtml(cat.nombre)}"
-                   onerror="this.src='images/producto-default.svg';this.onerror=null;">
+                   onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
               ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#1b4332;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
               <div class="card-body text-center">
                 <h5 class="card-title fw-bold text-dark">${escapeHtml(cat.nombre)}</h5>
@@ -110,7 +110,7 @@ async function cargarProductosDestacados() {
               <img src="${APIService.getImageUrl(prod.imagen)}"
                    class="card-img-top eco-card-img"
                    alt="${escapeHtml(prod.nombre)}"
-                   onerror="this.src='images/producto-default.svg';this.onerror=null;">
+                   onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
               <button class="fav-btn ${esFavorito ? 'active' : ''}" type="button" data-product-id="${prod.id}" aria-label="Favorito">
                 <i class="bi ${esFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i>
               </button>

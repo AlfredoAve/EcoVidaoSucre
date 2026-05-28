@@ -49,7 +49,7 @@ function actualizarTablaCarrito(carrito) {
       <tr>
         <td>
           <div class="d-flex gap-3">
-            <img src="${APIService.getImageUrl(item.imagen)}" style="width:50px; height:50px; object-fit:cover; border-radius:5px;" alt="${escapeHtml(item.nombre)}" onerror="this.src='images/producto-default.svg';this.onerror=null;">
+            <img src="${APIService.getImageUrl(item.imagen)}" style="width:50px; height:50px; object-fit:cover; border-radius:5px;" alt="${escapeHtml(item.nombre)}" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             <div>
               <strong>${escapeHtml(item.nombre)}</strong>
             </div>

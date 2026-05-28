@@ -107,7 +107,7 @@ async function cargarFavoritos() {
               <img src="${APIService.getImageUrl(prod.imagen)}"
                    class="card-img-top eco-card-img"
                    alt="${escapeHtml(prod.nombre)}"
-                   onerror="this.src='images/producto-default.svg';this.onerror=null;">
+                   onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
               <span class="eco-stock-badge eco-stock-ok">Favorito</span>
             </div>
             <div class="card-body d-flex flex-column eco-card-body">
