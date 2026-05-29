@@ -19,13 +19,17 @@ router.post('/crear-orden', authMiddleware, async (req, res) => {
     }
 
     // 2. Calcular total en Bolivianos y convertir a Dólares
-    // Parseo estricto a Number para evitar concatenación de strings de SQLite
-    const totalRealBs = items.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
+    // Forzamos el cálculo usando precio y cantidad para evitar fallos si SQLite omite 'subtotal'
+    const totalRealBs = items.reduce((sum, item) => {
+      const precio = Number(item.precioUnitario || item.precio) || 0;
+      const cantidad = Number(item.cantidad) || 0;
+      return sum + (precio * cantidad);
+    }, 0);
     const PAYPAL_USD_RATE = 6.96;
     const totalUsd = (totalRealBs / PAYPAL_USD_RATE).toFixed(2);
 
     if (isNaN(totalUsd) || Number(totalUsd) <= 0) {
-      return res.status(400).json({ error: 'El total del carrito es inválido o igual a cero.' });
+      return res.status(400).json({ error: `Total inválido. Calculado: Bs ${totalRealBs} -> $${totalUsd}` });
     }
 
     // 3. Crear orden en PayPal
