@@ -35,7 +35,7 @@ async function crearOrdenPayPal(total, moneda = 'USD') {
       purchase_units: [{
         amount: {
           currency_code: moneda,
-          value: parseFloat(total).toFixed(2)
+          value: Number(total).toFixed(2).toString()
         },
         description: 'Compra EcoVida'
       }]
