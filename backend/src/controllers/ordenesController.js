@@ -71,7 +71,24 @@ router.get('/:id/factura', authMiddleware, async (req, res) => {
     const pdfPath = require('path').join(__dirname, '../../facturas', `${facturaId}.pdf`);
     const fs = require('fs');
     if (!fs.existsSync(pdfPath)) {
-      return res.status(404).json({ error: 'Factura no generada' });
+      // Generar la factura al vuelo si no existe (solución para discos efímeros de Render o datos antiguos)
+      try {
+        const { generarFacturaPDF } = require('../services/facturaService');
+        const UserRepository = require('../repositories/userRepository');
+        const usuario = await UserRepository.obtenerPorId(orden.usuarioId);
+        const logoPath = require('path').join(__dirname, '../../../frontend/images/logo.png');
+        
+        await generarFacturaPDF({
+          orden: { ...orden, id: orden.id, fecha: orden.fechaCreacion },
+          usuario,
+          productos: orden.productos || [],
+          metodoPago: orden.metodoPago || 'No especificado',
+          logoPath
+        });
+      } catch (err) {
+        console.error('Error al regenerar factura:', err);
+        return res.status(404).json({ error: 'La factura no existe y no se pudo generar automáticamente.' });
+      }
     }
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${facturaId}.pdf"`);
