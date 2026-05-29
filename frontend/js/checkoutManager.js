@@ -74,18 +74,13 @@ function initPayPal(totalAmount) {
 
     createOrder: async function () {
       try {
-        const montoValido = Number(totalAmount) || 0;
-        if (montoValido <= 0) throw new Error('El carrito está vacío o el total es 0');
-        
-        const totalUsd = (montoValido / PAYPAL_USD_RATE).toFixed(2);
-
         const res = await fetch(`${API_BASE}/paypal/crear-orden`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({ total: totalUsd })
+          }
+          // ELIMINADO: Ya no enviamos el total desde el cliente por seguridad
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error HTTP ' + res.status);

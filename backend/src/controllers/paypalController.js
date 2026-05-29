@@ -10,13 +10,21 @@ const authMiddleware = require('../middleware/authMiddleware');
 // POST /api/paypal/crear-orden
 router.post('/crear-orden', authMiddleware, async (req, res) => {
   try {
-    const { total } = req.body;
-
-    if (!total || parseFloat(total) <= 0) {
-      return res.status(400).json({ error: 'Total inválido' });
+    const usuarioId = req.usuario.id;
+    
+    // 1. Obtener carrito directamente de la Base de Datos (Seguridad)
+    const items = await CarritoRepository.obtenerCarritoUsuario(usuarioId);
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: 'Carrito vacío' });
     }
 
-    const orden = await PayPalService.crearOrdenPayPal(total);
+    // 2. Calcular total en Bolivianos y convertir a Dólares
+    const totalRealBs = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const PAYPAL_USD_RATE = 6.96;
+    const totalUsd = (totalRealBs / PAYPAL_USD_RATE).toFixed(2);
+
+    // 3. Crear orden en PayPal
+    const orden = await PayPalService.crearOrdenPayPal(totalUsd);
 
     if (orden.id) {
       return res.json({ id: orden.id });
@@ -42,7 +50,7 @@ router.post('/capturar-orden', authMiddleware, async (req, res) => {
     const captura = await PayPalService.capturarOrdenPayPal(paypalOrderId);
 
     if (captura.status !== 'COMPLETED') {
-      return res.json({ success: false, error: `Pago no completado. Estado: ${captura.status}` });
+      return res.status(400).json({ success: false, error: `Pago rechazado por PayPal. Detalle: ${captura.status || 'PAYMENT_DENIED'}` });
     }
 
     const items = await CarritoRepository.obtenerCarritoUsuario(usuarioId);

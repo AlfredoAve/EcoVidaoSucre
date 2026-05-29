@@ -42,7 +42,11 @@ async function crearOrdenPayPal(total, moneda = 'USD') {
     })
   });
 
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.details?.[0]?.description || data.message || 'Error al crear orden en PayPal');
+  }
+  return data;
 }
 
 async function capturarOrdenPayPal(paypalOrderId) {
@@ -56,7 +60,11 @@ async function capturarOrdenPayPal(paypalOrderId) {
     }
   });
 
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.details?.[0]?.description || data.message || 'Error al capturar orden en PayPal');
+  }
+  return data;
 }
 
 module.exports = { crearOrdenPayPal, capturarOrdenPayPal };
