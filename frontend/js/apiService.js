@@ -192,6 +192,30 @@ class APIService {
     return res.json();
   }
 
+  static async descargarFactura(id) {
+    const token = this.getToken();
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+    const res = await fetch(`${API_BASE}/ordenes/${id}/factura`, {
+      headers: this.getHeaders()
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Error al descargar la factura');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `factura-${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
   // RESEÑAS
   static async obtenerResenasProducto(productoId) {
     const res = await fetch(`${API_BASE}/resenas/producto/${productoId}`, {

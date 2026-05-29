@@ -207,6 +207,14 @@ async function cargarOrdenes() {
           <p class="mb-1 text-muted small">Fecha: ${new Date(orden.fechaCreacion).toLocaleDateString()}</p>
           <p class="mb-1 text-muted small">Total: <strong class="text-success">$${orden.total.toFixed(2)}</strong></p>
           <p class="mb-0 text-muted small">Envío a: ${escapeHtml(orden.direccionEnvio)}</p>
+          <div class="mt-3 pt-2 border-top d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary" onclick="window.verDetalleOrdenCliente(${orden.id})">
+              <i class="bi bi-eye"></i> Ver detalle
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.descargarFacturaCliente(${orden.id})">
+              <i class="bi bi-file-earmark-pdf"></i> Descargar Factura
+            </button>
+          </div>
         </div>
       `;
     });
@@ -251,3 +259,82 @@ async function cargarResenas() {
     container.innerHTML = '<p class="text-danger">Error al cargar reseñas</p>';
   }
 }
+
+window.descargarFacturaCliente = async function(ordenId) {
+  try {
+    showNotif('Generando factura...', 'info');
+    await APIService.descargarFactura(ordenId);
+  } catch (error) {
+    console.error(error);
+    showNotif(error.message || 'Error al descargar la factura', 'error');
+  }
+};
+
+window.verDetalleOrdenCliente = async function(ordenId) {
+  try {
+    const orden = await APIService.obtenerOrdenPorId(ordenId);
+    if (orden.error) throw new Error(orden.error);
+    
+    let modalEl = document.getElementById('clientOrderDetailModal');
+    if (!modalEl) {
+      const html = `
+        <div class="modal fade" id="clientOrderDetailModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title fw-bold">Detalle de Orden #<span id="clientOrdId"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p class="mb-1 text-muted small">Estado: <strong id="clientOrdEstado" class="text-dark"></strong></p>
+                <p class="mb-3 text-muted small">Envío: <span id="clientOrdEnvio"></span></p>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Producto</th>
+                        <th>Cant.</th>
+                        <th>Precio Unit.</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody id="clientOrdProducts"></tbody>
+                    <tfoot class="table-light fw-bold">
+                      <tr>
+                        <td colspan="3" class="text-end">Total:</td>
+                        <td id="clientOrdTotal"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', html);
+      modalEl = document.getElementById('clientOrderDetailModal');
+    }
+
+    document.getElementById('clientOrdId').textContent = orden.id;
+    document.getElementById('clientOrdEstado').textContent = (orden.estado || '').toUpperCase();
+    document.getElementById('clientOrdEnvio').textContent = orden.direccionEnvio || 'N/A';
+    document.getElementById('clientOrdTotal').textContent = '$' + orden.total.toFixed(2);
+    
+    const tbody = document.getElementById('clientOrdProducts');
+    tbody.innerHTML = (orden.productos || []).map(p => `
+      <tr>
+        <td>${escapeHtml(p.nombre)}</td>
+        <td>${p.cantidad}</td>
+        <td>$${p.precio.toFixed(2)}</td>
+        <td>$${(p.cantidad * p.precio).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    const modal = new window.bootstrap.Modal(modalEl);
+    modal.show();
+  } catch (error) {
+    console.error(error);
+    showNotif('Error al cargar el detalle de la orden', 'error');
+  }
+};

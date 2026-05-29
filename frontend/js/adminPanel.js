@@ -685,6 +685,7 @@ function renderizarTablaOrdenes() {
             ${esEnviable    ? `<button class="btn btn-sm btn-outline-primary" onclick="abrirModalEnviarOrden(${orden.id})"    title="Marcar enviada"><i class="bi bi-truck"></i></button>` : ''}
             ${esEntregable  ? `<button class="btn btn-sm btn-outline-success" onclick="abrirModalEntregarOrden(${orden.id})"  title="Marcar entregada"><i class="bi bi-check2-all"></i></button>` : ''}
             ${esCancelable  ? `<button class="btn btn-sm btn-outline-danger"  onclick="confirmarCancelarOrden(${orden.id})"   title="Cancelar"><i class="bi bi-x-lg"></i></button>` : ''}
+            <button class="btn btn-sm btn-outline-secondary" onclick="descargarFacturaAdmin(${orden.id})" title="Descargar Factura PDF"><i class="bi bi-file-earmark-pdf"></i></button>
           </div>
         </td>
       </tr>`;
@@ -718,6 +719,16 @@ function verDetalleOrden(ordenId) {
 
   document.getElementById('orderDetailTotal').textContent = `$${Number(orden.total || 0).toFixed(2)}`;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('orderDetailModal')).show();
+}
+
+async function descargarFacturaAdmin(ordenId) {
+  try {
+    mostrarToast('Generando factura...', 'info');
+    await APIService.descargarFactura(ordenId);
+    mostrarToast('Factura descargada exitosamente', 'success');
+  } catch (error) {
+    mostrarToast(error.message || 'Error al descargar factura', 'error');
+  }
 }
 
 function abrirModalConfirmarOrden(ordenId) {
