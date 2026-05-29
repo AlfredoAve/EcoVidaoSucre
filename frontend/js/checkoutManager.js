@@ -63,8 +63,6 @@ function initPayPal(totalAmount) {
 
   container.innerHTML = '';
 
-  const totalUsd = Number((Number(totalAmount) / PAYPAL_USD_RATE).toFixed(2));
-
   paypal.Buttons({
     style: {
       layout: 'vertical',
@@ -75,17 +73,23 @@ function initPayPal(totalAmount) {
     },
 
     createOrder: async function () {
-      const res = await fetch(`${API_BASE}/paypal/crear-orden`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ total: totalUsd })
-      });
-      const data = await res.json();
-      if (!data.id) throw new Error(data.error || 'No se pudo crear la orden');
-      return data.id;
+      try {
+        const res = await fetch(`${API_BASE}/paypal/crear-orden`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+          // ELIMINADO: Ya no enviamos el total desde el frontend por seguridad
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error HTTP ' + res.status);
+        if (!data.id) throw new Error('No se recibió el ID de la orden de PayPal');
+        return data.id;
+      } catch (error) {
+        console.error('Error al crear orden en Backend:', error);
+        throw error; // Lanza el error para que el SDK de PayPal ejecute onError()
+      }
     },
 
     onApprove: async function (data) {
@@ -100,6 +104,7 @@ function initPayPal(totalAmount) {
         });
 
         const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Error HTTP ' + res.status);
 
         if (result.success) {
           document.getElementById('pago-exitoso').style.display = 'block';
@@ -112,6 +117,7 @@ function initPayPal(totalAmount) {
         }
       } catch (err) {
         document.getElementById('pago-error').style.display = 'block';
+        document.getElementById('pago-error').textContent = err.message || 'Error al capturar el pago';
         console.error('Error capturando pago:', err);
       }
     },
