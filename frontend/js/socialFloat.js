@@ -5,7 +5,7 @@ const SOCIAL = {
     color: '#25D366'
   },
   messenger: {
-    url: 'https://m.me/ecovida',
+    url: 'https://m.me/ecovidanaturalbo',
     color: '#0099FF'
   }
 };
@@ -13,10 +13,13 @@ const SOCIAL = {
 function createSocialDock() {
   const dock = document.createElement('div');
   dock.id = 'social-dock';
+
+  // Posición responsiva: en móvil más abajo para no tapar contenido
+  const isMobile = window.innerWidth < 600;
   dock.style.cssText = `
     position: fixed;
-    right: 20px;
-    bottom: 140px;
+    right: ${isMobile ? '14px' : '20px'};
+    bottom: ${isMobile ? '80px' : '100px'};
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -48,8 +51,8 @@ function createSocialDock() {
     a.title = btn.label;
     a.setAttribute('aria-label', btn.label);
     a.style.cssText = `
-      width: 44px;
-      height: 44px;
+      width: ${isMobile ? '40px' : '44px'};
+      height: ${isMobile ? '40px' : '44px'};
       border-radius: 50%;
       background: ${btn.bg};
       display: flex;

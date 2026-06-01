@@ -331,8 +331,21 @@ window.verDetalleOrdenCliente = async function(ordenId) {
       </tr>
     `).join('');
 
-    const modal = new window.bootstrap.Modal(modalEl);
-    modal.show();
+    if (window.bootstrap && window.bootstrap.Modal) {
+      const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    } else {
+      // Fallback si Bootstrap no cargó a tiempo
+      modalEl.classList.add('show');
+      modalEl.style.display = 'block';
+      document.body.classList.add('modal-open');
+      const closeBtn = modalEl.querySelector('.btn-close');
+      if (closeBtn) closeBtn.onclick = () => {
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        document.body.classList.remove('modal-open');
+      };
+    }
   } catch (error) {
     console.error(error);
     showNotif('Error al cargar el detalle de la orden', 'error');

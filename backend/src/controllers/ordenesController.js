@@ -68,22 +68,29 @@ router.get('/:id/factura', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'No tienes permiso para descargar esta factura' });
     }
     const facturaId = `F-${orden.id.toString().padStart(6, '0')}`;
-    const pdfPath = require('path').join(__dirname, '../../facturas', `${facturaId}.pdf`);
     const fs = require('fs');
+    const path = require('path');
+
+    const facturasDir = path.join(__dirname, '../../facturas');
+    if (!fs.existsSync(facturasDir)) {
+      fs.mkdirSync(facturasDir, { recursive: true });
+    }
+    const pdfPath = path.join(facturasDir, `${facturaId}.pdf`);
+
     if (!fs.existsSync(pdfPath)) {
       // Generar la factura al vuelo si no existe (solución para discos efímeros de Render o datos antiguos)
       try {
         const { generarFacturaPDF } = require('../services/facturaService');
         const UserRepository = require('../repositories/userRepository');
         const usuario = await UserRepository.obtenerPorId(orden.usuarioId);
-        const logoPath = require('path').join(__dirname, '../../../frontend/images/logo.png');
+        const logoPath = path.join(__dirname, '../../..', 'frontend', 'images', 'logo.png');
         
         await generarFacturaPDF({
           orden: { ...orden, id: orden.id, fecha: orden.fechaCreacion },
           usuario,
           productos: orden.productos || [],
           metodoPago: orden.metodoPago || 'No especificado',
-          logoPath
+          logoPath: fs.existsSync(logoPath) ? logoPath : null
         });
       } catch (err) {
         console.error('Error al regenerar factura:', err);

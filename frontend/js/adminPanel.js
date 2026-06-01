@@ -9,6 +9,7 @@ let categoriasDB      = [];
 let usuariosDB        = [];
 let todasOrdenes      = [];
 let ordenPendienteEstado = null;
+let todasResenasAdmin = [];
 let pendingConfirmFn  = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -26,7 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     cargarCategorias(),
     cargarProductos(),
     cargarEstadisticas(),
-    cargarOrdenes()
+    cargarOrdenes(),
+    cargarResenasAdmin()
   ]);
 
   configurarEventos();
@@ -122,6 +124,7 @@ function cambiarTab(tabName) {
   if (tabName === 'dashboard') cargarEstadisticas();
   if (tabName === 'base-datos') cargarBaseDatos();
   if (tabName === 'mensajes')  cargarMensajes();
+  if (tabName === 'resenas')   cargarResenasAdmin();
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -879,5 +882,39 @@ async function cargarMensajes() {
   } catch (e) {
     console.error('Error cargando mensajes:', e);
     tbody.innerHTML = '<tr><td colspan="6" class="text-danger text-center py-3">Error al cargar mensajes</td></tr>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESEÑAS (ADMIN)
+// ═══════════════════════════════════════════════════════════════════════════════
+async function cargarResenasAdmin() {
+  const tbody = document.getElementById('resenasAdminTableBody');
+  if (!tbody) return; // Si la pestaña no está en el HTML, ignora para no dar error
+  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+
+  try {
+    const resenas = await apiFetch('/resenas');
+    if (resenas?.error || !Array.isArray(resenas)) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted text-center py-4">No se pudieron cargar las reseñas</td></tr>`;
+      return;
+    }
+    todasResenasAdmin = resenas;
+    
+    if (!todasResenasAdmin.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center py-4">No hay reseñas registradas</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = todasResenasAdmin.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td>${escapeHtml(r.productoNombre || `Producto #${r.productoId}`)}</td>
+        <td>${escapeHtml(r.usuarioNombre || 'Cliente')}</td>
+        <td><span class="text-warning" style="font-size:1.1rem">${'★'.repeat(r.calificacion)}${'☆'.repeat(5-r.calificacion)}</span></td>
+        <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.comentario)}">${escapeHtml(r.comentario || '-')}</td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-danger text-center py-3">Error al cargar reseñas</td></tr>';
   }
 }

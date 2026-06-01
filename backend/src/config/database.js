@@ -234,7 +234,7 @@ function seedCategoryImages() {
     ['Especias',      'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&q=80'],
   ];
   const stmts = [
-    ...forced.map(([n, img]) => ({ sql: 'UPDATE categorias SET imagen = ? WHERE nombre = ?', p: [img, n] })),
+    ...forced.map(([n, img]) => ({ sql: "UPDATE categorias SET imagen = ? WHERE nombre = ? AND (imagen IS NULL OR imagen = '')", p: [img, n] })),
     ...defaults.map(([n, img]) => ({ sql: "UPDATE categorias SET imagen = ? WHERE nombre = ? AND (imagen IS NULL OR imagen = '')", p: [img, n] })),
   ];
   return new Promise((resolve) => {

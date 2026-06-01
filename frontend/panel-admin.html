@@ -31,23 +31,16 @@
 <div id="navbar-container"></div>
 <script src="js/navbarLoader.js"></script>
 
-<!-- Header -->
-<nav class="navbar navbar-dark eco-admin-topbar">
+<!-- Header Móvil -->
+<nav class="navbar navbar-dark eco-admin-topbar d-lg-none">
 <div class="container-fluid">
-<span class="navbar-brand mb-0 h1">
-<i class="bi bi-gear"></i> Panel Admin - EcoVida
-      </span>
-<div class="d-flex gap-2">
-<button aria-controls="adminSidebarOffcanvas" class="btn btn-outline-light btn-sm d-md-none" data-bs-target="#adminSidebarOffcanvas" data-bs-toggle="offcanvas" type="button">
-<i class="bi bi-list"></i>
+<span class="navbar-brand mb-0 h1"><i class="bi bi-gear"></i> Admin EcoVida</span>
+<button aria-controls="adminSidebarOffcanvas" class="btn btn-outline-light btn-sm" data-bs-target="#adminSidebarOffcanvas" data-bs-toggle="offcanvas" type="button">
+<i class="bi bi-list"></i> Menú
 </button>
-<span class="text-white" id="adminName"></span>
-<button class="btn btn-outline-light btn-sm" id="logoutBtn">
-<i class="bi bi-box-arrow-right"></i> Salir
-        </button>
-</div>
 </div>
 </nav>
+
 <div aria-labelledby="adminSidebarOffcanvasLabel" class="offcanvas offcanvas-start eco-panel-offcanvas" id="adminSidebarOffcanvas" tabindex="-1">
 <div class="offcanvas-header">
 <h5 class="offcanvas-title" id="adminSidebarOffcanvasLabel">Panel Admin</h5>
@@ -79,87 +72,90 @@
 </nav>
 </div>
 </div>
-<div class="container-fluid mt-5 pt-5 eco-admin-panel">
-<div class="row">
-<!-- Sidebar -->
-<div class="col-md-3 admin-sidebar ps-0 eco-sidebar">
-<nav aria-label="Secciones del panel" class="nav flex-column p-3">
-<a class="nav-link active tab-link eco-sidebar-link" data-tab="dashboard" href="#">
+
+<div class="d-flex flex-column flex-lg-row" style="min-height: calc(100vh - 64px);">
+<!-- Sidebar Desktop -->
+<aside class="admin-sidebar-new d-none d-lg-block">
+<div class="admin-logo-box">
+<img src="images/logo.png" alt="EcoVida" height="40" style="filter: brightness(0) invert(1);">
+</div>
+<nav aria-label="Secciones del panel" class="nav flex-column py-3">
+<a class="admin-nav-link active tab-link" data-tab="dashboard" href="#">
 <i class="bi bi-graph-up"></i> Dashboard
-          </a>
-<a class="nav-link tab-link eco-sidebar-link" data-tab="productos" href="#">
+</a>
+<a class="admin-nav-link tab-link" data-tab="productos" href="#">
 <i class="bi bi-bag"></i> Gestionar Productos
-          </a>
-<a class="nav-link tab-link eco-sidebar-link" data-tab="categorias" href="#">
+</a>
+<a class="admin-nav-link tab-link" data-tab="categorias" href="#">
 <i class="bi bi-list"></i> Gestionar Categorías
-          </a>
-<a class="nav-link tab-link eco-sidebar-link" data-tab="ordenes" href="#">
+</a>
+<a class="admin-nav-link tab-link" data-tab="ordenes" href="#">
 <i class="bi bi-receipt"></i> Órdenes
-          </a>
-<a class="nav-link tab-link eco-sidebar-link" data-tab="usuarios" href="#">
+</a>
+<a class="admin-nav-link tab-link" data-tab="usuarios" href="#">
 <i class="bi bi-people"></i> Usuarios
-          </a>
-<a class="nav-link tab-link eco-sidebar-link" data-tab="base-datos" href="#">
+</a>
+<a class="admin-nav-link tab-link" data-tab="base-datos" href="#">
 <i class="bi bi-database"></i> Base de datos
-          </a>
-<a class="nav-link tab-link eco-sidebar-link" data-tab="mensajes" href="#">
+</a>
+<a class="admin-nav-link tab-link" data-tab="mensajes" href="#">
 <i class="bi bi-envelope"></i> Mensajes
-          </a>
+</a>
 </nav>
-</div>
-<!-- Contenido -->
-<div class="col-md-9">
-<div class="eco-panel-head">
+</aside>
+
+<!-- Contenido Principal -->
+<div class="flex-grow-1" style="min-width: 0;">
+<header class="admin-header-new d-none d-lg-flex">
 <div>
-<h1 class="eco-panel-title">Panel de administración</h1>
-<p class="eco-panel-subtitle">Control total de inventario, ventas y usuarios.</p>
+<h4 class="mb-0 fw-bold text-dark">¡Hola, <span id="adminName">Admin</span>!</h4>
+<p class="text-muted small mb-0">Control total de inventario, ventas y usuarios.</p>
 </div>
-<div class="eco-panel-chip"><i class="bi bi-shield-check"></i> Admin EcoVida</div>
+<div class="d-flex gap-3 align-items-center">
+<span class="badge bg-success px-3 py-2 rounded-pill shadow-sm"><i class="bi bi-shield-lock"></i> Administrador</span>
+<button class="btn btn-outline-danger btn-sm" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Salir</button>
 </div>
+</header>
+
+<main class="p-4">
 <!-- Dashboard -->
 <div class="tab-content" id="dashboard-tab">
-<h2 class="fw-bold mb-4">Dashboard</h2>
-<div class="row g-4">
-<div class="col-md-3">
-<div class="card shadow-sm eco-kpi-card">
-<div class="card-body">
-<h6 class="card-subtitle text-muted eco-kpi-title">Total de Órdenes</h6>
-<h3 class="text-success fw-bold eco-kpi-value" id="totalOrdenes">0</h3>
+<h4 class="fw-bold mb-4 d-lg-none">Dashboard</h4>
+<div class="row g-4 mb-4">
+<div class="col-md-6 col-xl-3">
+<div class="kpi-card-new kpi-orders">
+<div class="kpi-label">Total Órdenes</div>
+<div class="kpi-val text-primary" id="totalOrdenes">0</div>
 </div>
 </div>
-</div>
-<div class="col-md-3">
-<div class="card shadow-sm eco-kpi-card">
-<div class="card-body">
-<h6 class="card-subtitle text-muted eco-kpi-title">Ingresos Totales</h6>
-<h3 class="text-success fw-bold eco-kpi-value">Bs <span id="ingresoTotal">0</span></h3>
+<div class="col-md-6 col-xl-3">
+<div class="kpi-card-new kpi-income">
+<div class="kpi-label">Ingresos Totales</div>
+<div class="kpi-val text-success">Bs <span id="ingresoTotal">0</span></div>
 </div>
 </div>
-</div>
-<div class="col-md-3">
-<div class="card shadow-sm eco-kpi-card">
-<div class="card-body">
-<h6 class="card-subtitle text-muted eco-kpi-title">Órdenes Completadas</h6>
-<h3 class="text-info fw-bold eco-kpi-value" id="completadas">0</h3>
+<div class="col-md-6 col-xl-3">
+<div class="kpi-card-new kpi-completed">
+<div class="kpi-label">Órdenes Completadas</div>
+<div class="kpi-val text-info" id="completadas">0</div>
 </div>
 </div>
-</div>
-<div class="col-md-3">
-<div class="card shadow-sm eco-kpi-card">
-<div class="card-body">
-<h6 class="card-subtitle text-muted eco-kpi-title">Órdenes Pendientes</h6>
-<h3 class="text-warning fw-bold eco-kpi-value" id="pendientes">0</h3>
-</div>
+<div class="col-md-6 col-xl-3">
+<div class="kpi-card-new kpi-pending">
+<div class="kpi-label">Órdenes Pendientes</div>
+<div class="kpi-val text-warning" id="pendientes">0</div>
 </div>
 </div>
 </div>
 </div>
 <!-- Productos -->
 <div class="tab-content" id="productos-tab" style="display:none;">
-<h2 class="fw-bold mb-4">Gestionar Productos</h2>
-<button class="btn btn-success mb-3" id="newProductBtn">
-<i class="bi bi-plus-circle"></i> Nuevo Producto
-          </button>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+<h4 class="fw-bold mb-0 text-dark">Gestionar Productos</h4>
+<button class="btn btn-success shadow-sm" id="newProductBtn">
+<i class="bi bi-plus-lg"></i> Nuevo Producto
+</button>
+</div>
 <div class="table-responsive eco-table-wrap" id="productosList">
 <table class="table table-hover eco-admin-table">
 <thead class="table-light">
@@ -177,10 +173,12 @@
 </div>
 <!-- Categorías -->
 <div class="tab-content" id="categorias-tab" style="display:none;">
-<h2 class="fw-bold mb-4">Gestionar Categorías</h2>
-<button class="btn btn-success mb-3" id="newCategoryBtn">
-<i class="bi bi-plus-circle"></i> Nueva Categoría
-          </button>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+<h4 class="fw-bold mb-0 text-dark">Gestionar Categorías</h4>
+<button class="btn btn-success shadow-sm" id="newCategoryBtn">
+<i class="bi bi-plus-lg"></i> Nueva Categoría
+</button>
+</div>
 <div class="table-responsive eco-table-wrap" id="categoriasList">
 <table class="table table-hover eco-admin-table">
 <thead class="table-light">
@@ -198,7 +196,16 @@
 </div>
 <!-- Órdenes -->
 <div class="tab-content" id="ordenes-tab" style="display:none;">
-<h2 class="fw-bold mb-4">Órdenes</h2>
+<h4 class="fw-bold mb-3 text-dark">Gestión de Órdenes</h4>
+<!-- Filtros de estado -->
+<div class="d-flex flex-wrap gap-2 mb-4" id="orderFilters">
+<span class="status-chip active text-dark bg-white border shadow-sm" data-status="todas">Todas</span>
+<span class="status-chip" style="background: rgba(255,193,7,0.15); color: #b38600;" data-status="pendiente">Pendiente</span>
+<span class="status-chip" style="background: rgba(13,110,253,0.15); color: #0d6efd;" data-status="confirmada">Confirmada</span>
+<span class="status-chip" style="background: rgba(23,162,184,0.15); color: #117a8b;" data-status="enviado">Enviado</span>
+<span class="status-chip" style="background: rgba(32,201,151,0.15); color: #189871;" data-status="entregado">Entregado</span>
+<span class="status-chip" style="background: rgba(220,53,69,0.15); color: #dc3545;" data-status="cancelada">Cancelada</span>
+</div>
 <div class="table-responsive eco-table-wrap" id="ordenesList">
 <table class="table table-hover eco-admin-table">
 <thead class="table-light">
@@ -217,7 +224,7 @@
 </div>
 <!-- Usuarios -->
 <div class="tab-content" id="usuarios-tab" style="display:none;">
-<h2 class="fw-bold mb-4">Usuarios</h2>
+<h4 class="fw-bold mb-4 text-dark">Gestión de Usuarios</h4>
 <div class="table-responsive eco-table-wrap" id="usuariosList">
 <table class="table table-hover eco-admin-table">
 <thead class="table-light">
@@ -236,7 +243,7 @@
 <!-- Mensajes de Contacto -->
 <div class="tab-content" id="mensajes-tab" style="display:none;">
 <div class="d-flex align-items-center justify-content-between mb-3">
-<h2 class="fw-bold mb-0">Mensajes de contacto</h2>
+<h4 class="fw-bold mb-0 text-dark">Mensajes de contacto</h4>
 <button class="btn btn-outline-success btn-sm" id="reloadMensajesBtn">
 <i class="bi bi-arrow-clockwise"></i> Recargar
             </button>
@@ -260,7 +267,7 @@
 <!-- Base de datos -->
 <div class="tab-content" id="base-datos-tab" style="display:none;">
 <div class="d-flex align-items-center justify-content-between mb-3">
-<h2 class="fw-bold mb-0">Base de datos</h2>
+<h4 class="fw-bold mb-0 text-dark">Base de datos</h4>
 <button class="btn btn-outline-success btn-sm" id="reloadDbBtn">
 <i class="bi bi-arrow-clockwise"></i> Recargar
             </button>
@@ -338,7 +345,7 @@
 </div>
 </div>
 </div>
-</div>
+</main>
 </div>
 </div>
 <!-- Modal Producto -->

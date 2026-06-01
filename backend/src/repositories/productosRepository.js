@@ -88,7 +88,7 @@ class ProductosRepository {
   static actualizarStock(id, cantidad) {
     return new Promise((resolve, reject) => {
       const db = getDB();
-      db.run('UPDATE productos SET stock = stock + ? WHERE id = ?',
+      db.run('UPDATE productos SET stock = MAX(0, stock + ?) WHERE id = ?',
         [cantidad, id], function(err) {
           if (err) reject(err);
           else resolve(this.changes > 0);

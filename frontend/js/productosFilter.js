@@ -213,7 +213,7 @@ function renderizarProductos(productos) {
     const enStock = prod.stock > 0;
     const esFavorito = favoritosIdsCatalogo.has(prod.id);
     html += `
-      <div class="col-sm-6 col-md-4 col-lg-3">
+      <div class="col-12 col-md-4 col-lg-3">
         <div class="card h-100 border-0 eco-card">
           <div class="eco-card-img-wrapper">
             <img src="${APIService.getImageUrl(prod.imagen)}"
@@ -291,97 +291,96 @@ async function abrirProducto(productoId) {
   }
 }
 
+// ─── NUEVA LÓGICA DE RESEÑAS PREMIUM ─────────────────────────────────────────
 async function cargarResenasProducto(productoId) {
   try {
     const data = await APIService.obtenerResenasProducto(productoId);
     const container = document.getElementById('resenaProducto');
-    const usuarioLocal = JSON.parse(localStorage.getItem('usuario') || 'null');
-    const puedeResenar = !!APIService.getToken() && usuarioLocal?.rol !== 'admin';
 
     let html = '';
 
     if (data.total > 0) {
       const promedio = Number(data.promedio).toFixed(1);
-      html += `<div class="mb-2 small"><strong>Calificación:</strong> ${'⭐'.repeat(Math.round(data.promedio))} (${promedio}/5 — ${data.total} reseña${data.total !== 1 ? 's' : ''})</div>`;
-      const recientes = (data.resenas || []).slice(0, 3);
-      recientes.forEach(r => {
-        html += `<div class="border-bottom pb-1 mb-1 small">
-          <div class="d-flex justify-content-between">
-            <strong>${escapeHtml(r.nombre || 'Cliente')}</strong>
-            <span>${'⭐'.repeat(r.calificacion)}</span>
+      html += `<div class="mb-4 small"><strong>Calificación General:</strong> <span class="text-warning" style="font-size:1.1rem;">${'★'.repeat(Math.round(data.promedio))}</span> (${promedio}/5 — ${data.total} reseña${data.total !== 1 ? 's' : ''})</div>`;
+      
+      const resenas = data.resenas || [];
+      resenas.forEach(r => {
+        const estrellas = '<i class="bi bi-star-fill"></i>'.repeat(r.calificacion) + 
+                          '<i class="bi bi-star"></i>'.repeat(5 - r.calificacion);
+        html += `
+          <div class="review-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <p class="review-user-name">${escapeHtml(r.nombre || r.usuarioNombre || 'Cliente')}</p>
+                <div class="review-stars">${estrellas}</div>
+              </div>
+              <span class="review-date">${new Date(r.fechaCreacion).toLocaleDateString()}</span>
+            </div>
+            <p class="review-text">${escapeHtml(r.comentario || '')}</p>
           </div>
-          ${r.comentario ? `<p class="mb-0 text-muted">${escapeHtml(r.comentario)}</p>` : ''}
-        </div>`;
+        `;
       });
     } else {
-      html += '<p class="text-muted small mb-1">Sin reseñas aún</p>';
-    }
-
-    if (puedeResenar) {
-      html += `
-        <hr class="my-2">
-        <p class="fw-bold small mb-1">Escribe tu reseña</p>
-        <div class="d-flex gap-1 mb-2" id="resenaStars" data-val="0">
-          ${[1,2,3,4,5].map(n => `<span class="resena-star" data-n="${n}" style="cursor:pointer;font-size:1.5rem;user-select:none;">☆</span>`).join('')}
+      html = `
+        <div class="review-empty-state">
+          <i class="bi bi-chat-heart"></i>
+          <h6 class="text-dark fw-bold mb-1">Aún no hay reseñas</h6>
+          <p class="text-muted text-sm mb-0">¡Sé el primero en calificar este producto!</p>
         </div>
-        <textarea class="form-control form-control-sm mb-2" id="resenaComentario" rows="2" placeholder="Comentario (opcional)"></textarea>
-        <button class="btn btn-success btn-sm" onclick="window.enviarResena(${productoId})">
-          <i class="bi bi-star-fill"></i> Enviar reseña
-        </button>
-        <div id="resenaMsg" class="mt-1 small"></div>`;
+      `;
     }
 
     container.innerHTML = html;
-
-    if (puedeResenar) {
-      container.querySelectorAll('.resena-star').forEach(star => {
-        star.addEventListener('click', () => {
-          const n = parseInt(star.dataset.n);
-          document.getElementById('resenaStars').dataset.val = n;
-          container.querySelectorAll('.resena-star').forEach((s, i) => {
-            s.textContent = i < n ? '⭐' : '☆';
-          });
-        });
-      });
-    }
   } catch (error) {
     console.error('Error cargando reseñas:', error);
   }
 }
 
-async function enviarResena(productoId) {
-  const calificacion = parseInt(document.getElementById('resenaStars')?.dataset.val || '0');
-  const comentario = document.getElementById('resenaComentario')?.value || '';
-  const msgEl = document.getElementById('resenaMsg');
+// Evento para el botón de enviar reseña
+document.getElementById('submitReviewBtn')?.addEventListener('click', async (e) => {
+  const btn = e.target;
+  const calificacion = parseInt(btn.getAttribute('data-calificacion') || '0');
+  const comentario = document.getElementById('reviewComment').value.trim();
 
-  if (!calificacion) {
-    msgEl.className = 'mt-1 small text-danger';
-    msgEl.textContent = 'Selecciona una calificación (1-5 estrellas)';
+  if (calificacion === 0) {
+    showNotif('Por favor selecciona una calificación de estrellas', 'warning');
     return;
   }
 
+  if (!productoSeleccionado || !productoSeleccionado.id) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Enviando...';
+
   try {
-    const resultado = await APIService.crearResena(productoId, calificacion, comentario);
+    const resultado = await APIService.crearResena(productoSeleccionado.id, calificacion, comentario);
     if (resultado.error) {
-      msgEl.className = 'mt-1 small text-danger';
-      msgEl.textContent = resultado.error;
-      return;
+      throw new Error(resultado.error);
     }
-    msgEl.className = 'mt-1 small text-success';
-    msgEl.textContent = '¡Reseña enviada! Gracias.';
-    await cargarResenasProducto(productoId);
+    
+    showNotif('¡Gracias por tu reseña!', 'success');
+    document.getElementById('cancelReviewBtn').click();
+    cargarResenasProducto(productoSeleccionado.id);
   } catch (e) {
-    msgEl.className = 'mt-1 small text-danger';
-    msgEl.textContent = 'Error al enviar la reseña';
+    showNotif(e.message || 'Error al enviar la reseña', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Enviar Reseña';
   }
-}
-window.enviarResena = enviarResena;
+});
 
 async function agregarAlCarrito(productoId) {
-  return agregarAlCarritoDesdeTarjeta(productoId);
+  const qtyEl = document.getElementById('productQty');
+  const cantidad = qtyEl ? parseInt(qtyEl.value) : 1;
+  return procesarAgregarCarrito(productoId, cantidad);
 }
 
 async function agregarAlCarritoDesdeTarjeta(productoId) {
+  // Desde la tarjeta directamente SIEMPRE agregamos 1 unidad
+  return procesarAgregarCarrito(productoId, 1);
+}
+
+async function procesarAgregarCarrito(productoId, cantidad) {
   const token = APIService.getToken();
 
   if (!token) {
@@ -389,9 +388,6 @@ async function agregarAlCarritoDesdeTarjeta(productoId) {
     window.location.href = 'login.html';
     return;
   }
-
-  const qtyEl = document.getElementById('productQty');
-  const cantidad = qtyEl ? parseInt(qtyEl.value) : 1;
 
   try {
     const resultado = await APIService.agregarAlCarrito(productoId, cantidad);

@@ -57,22 +57,20 @@ async function cargarCategorias() {
     let html = '';
     categorias.forEach(cat => {
       html += `
-        <div class="col-6 col-md-3 mb-4">
-          <a href="productos.html?categoria=${cat.id}" class="text-decoration-none">
-            <div class="card h-100 border-0 hover-shadow category-card-shadow" style="position:relative;overflow:hidden;">
-              <img src="${APIService.getImageUrl(cat.imagen)}"
-                   class="card-img-top"
-                   style="height:200px;object-fit:cover;"
-                   alt="${escapeHtml(cat.nombre)}"
-                   onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
-              ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#1b4332;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
-              <div class="card-body text-center">
-                <h5 class="card-title fw-bold text-dark">${escapeHtml(cat.nombre)}</h5>
-                <p class="text-muted small mb-0">${cat.productosCount || 0} productos</p>
-              </div>
+        <a href="productos.html?categoria=${cat.id}" class="text-decoration-none">
+          <div class="card h-100 border-0 hover-shadow category-card-shadow" style="position:relative;overflow:hidden;">
+            <img src="${APIService.getImageUrl(cat.imagen)}"
+                 class="card-img-top"
+                 style="height:160px;object-fit:cover;"
+                 alt="${escapeHtml(cat.nombre)}"
+                 onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
+            ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#1b4332;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
+            <div class="card-body text-center" style="padding:12px;">
+              <h5 class="card-title fw-bold text-dark" style="font-size:0.95rem;margin-bottom:4px;">${escapeHtml(cat.nombre)}</h5>
+              <p class="text-muted small mb-0">${cat.productosCount || 0} productos</p>
             </div>
-          </a>
-        </div>
+          </div>
+        </a>
       `;
     });
 
@@ -104,7 +102,7 @@ async function cargarProductosDestacados() {
       const enStockH = prod.stock > 0;
       const esFavorito = favoritosIdsHome.has(prod.id);
       html += `
-        <div class="col-sm-6 col-md-4 col-lg-3">
+        <div class="col-12 col-md-4 col-lg-3">
           <div class="card h-100 border-0 eco-card">
             <div class="eco-card-img-wrapper">
               <img src="${APIService.getImageUrl(prod.imagen)}"

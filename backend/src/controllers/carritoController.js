@@ -39,8 +39,14 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    if (producto.stock < cantidad) {
-      return res.status(400).json({ error: 'Stock insuficiente' });
+    // Calcular la cantidad total que habría en el carrito
+    const carritoActual = await CarritoRepository.obtenerCarritoUsuario(usuarioId);
+    const itemEnCarrito = carritoActual.find(item => item.productoId === parseInt(productoId));
+    const cantidadActual = itemEnCarrito ? itemEnCarrito.cantidad : 0;
+    const cantidadTotal = cantidadActual + parseInt(cantidad);
+
+    if (producto.stock < cantidadTotal) {
+      return res.status(400).json({ error: `Stock insuficiente. Ya tienes ${cantidadActual} en el carrito y el límite es ${producto.stock}.` });
     }
 
     // Agregar al carrito

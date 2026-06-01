@@ -110,12 +110,19 @@ function configurarEventos() {
 async function actualizarCantidad(productoId, nuevaCantidad) {
   nuevaCantidad = parseInt(nuevaCantidad);
 
-  if (nuevaCantidad < 1) {
-    eliminarDelCarrito(productoId);
-    return;
-  }
-
   try {
+    const producto = await APIService.obtenerProductoPorId(productoId);
+    const stockDisponible = producto.stock;
+
+    if (nuevaCantidad > stockDisponible) {
+      nuevaCantidad = stockDisponible;
+      showNotif(`Solo hay ${stockDisponible} unidades disponibles`);
+    }
+
+    if (nuevaCantidad < 1) {
+      nuevaCantidad = 1;
+    }
+
     const resultado = await APIService.actualizarCarrito(productoId, nuevaCantidad);
 
     if (resultado.error) {

@@ -4,13 +4,25 @@ class CarritoRepository {
   static agregarAlCarrito(usuarioId, productoId, cantidad, precioUnitario) {
     return new Promise((resolve, reject) => {
       const db = getDB();
-      const query = `
-        INSERT OR REPLACE INTO carrito (usuarioId, productoId, cantidad, precioUnitario)
-        VALUES (?, ?, ?, ?)
-      `;
-      db.run(query, [usuarioId, productoId, cantidad, precioUnitario], function(err) {
-        if (err) reject(err);
-        else resolve(this.lastID || 1);
+      db.get('SELECT cantidad FROM carrito WHERE usuarioId = ? AND productoId = ?', [usuarioId, productoId], (err, row) => {
+        if (err) return reject(err);
+        
+        if (row) {
+          const nuevaCantidad = row.cantidad + cantidad;
+          db.run('UPDATE carrito SET cantidad = ? WHERE usuarioId = ? AND productoId = ?', [nuevaCantidad, usuarioId, productoId], function(err) {
+            if (err) reject(err);
+            else resolve(this.changes > 0 ? 1 : 0);
+          });
+        } else {
+          const query = `
+            INSERT INTO carrito (usuarioId, productoId, cantidad, precioUnitario)
+            VALUES (?, ?, ?, ?)
+          `;
+          db.run(query, [usuarioId, productoId, cantidad, precioUnitario], function(err) {
+            if (err) reject(err);
+            else resolve(this.lastID || 1);
+          });
+        }
       });
     });
   }

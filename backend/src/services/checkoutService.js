@@ -117,7 +117,7 @@ class CheckoutService {
       const usuario = await UserRepository.obtenerPorId(orden.usuarioId);
       // Generar PDF de factura
       const { generarFacturaPDF } = require('./facturaService');
-      const logoPath = require('path').join(__dirname, '../../frontend/images/logo.png');
+      const logoPath = require('path').join(__dirname, '../../../frontend/images/logo.png');
       await generarFacturaPDF({
         orden: { ...orden, id: orden.id, fecha: orden.fechaCreacion },
         usuario,
