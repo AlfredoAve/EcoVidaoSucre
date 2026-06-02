@@ -23,7 +23,12 @@ class OrdenesRepository {
   static obtenerPorId(id) {
     return new Promise((resolve, reject) => {
       const db = getDB();
-      db.get('SELECT * FROM ordenes WHERE id = ?', [id], (err, row) => {
+      db.get(`
+        SELECT o.*, u.nombre, u.email, u.telefono, u.direccion AS direccionPerfil, u.ciudad
+        FROM ordenes o
+        JOIN usuarios u ON o.usuarioId = u.id
+        WHERE o.id = ?
+      `, [id], (err, row) => {
         if (err) reject(err);
         else {
           if (row) {
@@ -60,7 +65,7 @@ class OrdenesRepository {
     return new Promise((resolve, reject) => {
       const db = getDB();
       db.all(`
-        SELECT o.*, u.nombre, u.email
+        SELECT o.*, u.nombre, u.email, u.telefono, u.direccion, u.ciudad
         FROM ordenes o
         JOIN usuarios u ON o.usuarioId = u.id
         ORDER BY o.fechaCreacion DESC

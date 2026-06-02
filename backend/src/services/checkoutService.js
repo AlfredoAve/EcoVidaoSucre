@@ -112,9 +112,16 @@ class CheckoutService {
     try {
       const ordenData = await this.crearOrdenDesdeCarrito(usuarioId, direccionEnvio);
       const orden = await OrdenesRepository.obtenerPorId(ordenData.ordenId);
-      // Obtener usuario
+      // Obtener usuario con todos los datos del perfil
       const UserRepository = require('../repositories/userRepository');
-      const usuario = await UserRepository.obtenerPorId(orden.usuarioId);
+      const usuarioRaw = await UserRepository.obtenerPorId(orden.usuarioId);
+      const usuario = {
+        nombre:    usuarioRaw.nombre    || 'Cliente General',
+        email:     usuarioRaw.email     || 'N/A',
+        telefono:  usuarioRaw.telefono  || 'N/A',
+        direccion: usuarioRaw.direccion || '',
+        ciudad:    usuarioRaw.ciudad    || ''
+      };
       // Generar PDF de factura
       const { generarFacturaPDF } = require('./facturaService');
       const logoPath = require('path').join(__dirname, '../../../frontend/images/logo.png');

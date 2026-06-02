@@ -69,10 +69,19 @@ router.post('/capturar-orden', authMiddleware, async (req, res) => {
 
     const totalReal = items.reduce((sum, item) => sum + item.subtotal, 0);
 
+    const UserRepository = require('../repositories/userRepository');
+    const usuario = await UserRepository.obtenerPorId(usuarioId);
+
     const shipping = captura.purchase_units?.[0]?.shipping?.address;
-    const direccionEnvio = shipping
-      ? [shipping.address_line_1, shipping.admin_area_2, shipping.country_code].filter(Boolean).join(', ')
-      : 'Dirección PayPal sandbox';
+    let direccionEnvio = '';
+
+    if (usuario && usuario.direccion) {
+      direccionEnvio = `${usuario.direccion}${usuario.ciudad ? ', ' + usuario.ciudad : ''}${usuario.telefono ? '. Tel: ' + usuario.telefono : ''}`;
+    } else {
+      direccionEnvio = shipping
+        ? [shipping.address_line_1, shipping.admin_area_2, shipping.country_code].filter(Boolean).join(', ')
+        : 'Dirección PayPal sandbox';
+    }
 
     const productos = items.map(item => ({
       productoId: item.productoId,

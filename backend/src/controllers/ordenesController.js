@@ -57,54 +57,52 @@ router.get('/:id', authMiddleware, async (req, res) => {
 
 // GET /api/ordenes/:id/factura - Descargar PDF de factura
 router.get('/:id/factura', authMiddleware, async (req, res) => {
+  const fs   = require('fs');
+  const path = require('path');
   try {
     const { id } = req.params;
     const orden = await OrdenesRepository.obtenerPorId(id);
     if (!orden) {
       return res.status(404).json({ error: 'Orden no encontrada' });
     }
-    // Solo el dueño o admin puede descargar
     if (req.usuario.id !== orden.usuarioId && req.usuario.rol !== 'admin') {
       return res.status(403).json({ error: 'No tienes permiso para descargar esta factura' });
     }
-    const facturaId = `F-${orden.id.toString().padStart(6, '0')}`;
-    const fs = require('fs');
-    const path = require('path');
 
+    const facturaId   = `F-${orden.id.toString().padStart(6, '0')}`;
     const facturasDir = path.join(__dirname, '../../facturas');
-    if (!fs.existsSync(facturasDir)) {
-      fs.mkdirSync(facturasDir, { recursive: true });
-    }
+    if (!fs.existsSync(facturasDir)) fs.mkdirSync(facturasDir, { recursive: true });
     const pdfPath = path.join(facturasDir, `${facturaId}.pdf`);
 
-    if (!fs.existsSync(pdfPath)) {
-      // Generar la factura al vuelo si no existe (solución para discos efímeros de Render o datos antiguos)
-      try {
-        const { generarFacturaPDF } = require('../services/facturaService');
-        const UserRepository = require('../repositories/userRepository');
-        const usuario = await UserRepository.obtenerPorId(orden.usuarioId);
-        const logoPath = path.join(__dirname, '../../..', 'frontend', 'images', 'logo.png');
-        
-        await generarFacturaPDF({
-          orden: { ...orden, id: orden.id, fecha: orden.fechaCreacion },
-          usuario,
-          productos: orden.productos || [],
-          metodoPago: orden.metodoPago || 'No especificado',
-          logoPath: fs.existsSync(logoPath) ? logoPath : null
-        });
-      } catch (err) {
-        console.error('Error al regenerar factura:', err);
-        return res.status(404).json({ error: 'La factura no existe y no se pudo generar automáticamente.' });
-      }
-    }
+    // Siempre regenerar (Render usa disco efimero, archivos no persisten entre deploys)
+    const { generarFacturaPDF } = require('../services/facturaService');
+    const UserRepository = require('../repositories/userRepository');
+    const usuarioRaw = await UserRepository.obtenerPorId(orden.usuarioId);
+    const usuario = {
+      nombre:    usuarioRaw.nombre    || 'Cliente General',
+      email:     usuarioRaw.email     || 'N/A',
+      telefono:  usuarioRaw.telefono  || 'N/A',
+      direccion: usuarioRaw.direccion || '',
+      ciudad:    usuarioRaw.ciudad    || ''
+    };
+    const logoPath = path.join(__dirname, '../../../frontend/images/logo.png');
+
+    await generarFacturaPDF({
+      orden:      { ...orden, id: orden.id, fecha: orden.fechaCreacion },
+      usuario,
+      productos:  orden.productos || [],
+      metodoPago: orden.metodoPago || 'No especificado',
+      logoPath:   fs.existsSync(logoPath) ? logoPath : null
+    });
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${facturaId}.pdf"`);
     fs.createReadStream(pdfPath).pipe(res);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error generando factura:', error);
+    res.status(500).json({ error: 'Error al generar la factura: ' + error.message });
   }
 });
-
 // POST /api/ordenes - Crear nueva orden desde carrito
 router.post('/', authMiddleware, async (req, res) => {
   try {
