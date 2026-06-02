@@ -47,7 +47,7 @@
               <p class="auth-subtitle">Únete a EcoVida hoy</p>
             </div>
 
-            <div id="registerForm">
+            <form id="registerForm">
               <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre Completo</label>
                 <input type="text" class="form-control auth-input" id="nombre" placeholder="Juan Pérez" required autocomplete="name">
@@ -81,10 +81,10 @@
                 </label>
               </div>
 
-              <button type="button" id="submitBtn" class="btn auth-btn w-100 py-2 fw-bold">
+              <button type="submit" id="submitBtn" class="btn auth-btn w-100 py-2 fw-bold">
                 <i class="bi bi-person-plus"></i> Crear Cuenta
               </button>
-            </div>
+            </form>
 
             <div class="alert alert-danger mt-3" id="errorAlert" style="display:none;" role="alert"></div>
             <div class="alert alert-success mt-3" id="successAlert" style="display:none;" role="alert"></div>
