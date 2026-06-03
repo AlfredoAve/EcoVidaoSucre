@@ -7,9 +7,17 @@ const router = express.Router();
 // GET /api/productos - Listar todos los productos
 router.get('/', async (req, res) => {
   try {
-    const productos = await ProductosRepository.obtenerTodos();
-    console.log('📦 Productos encontrados:', productos ? productos.length : 0);
-    res.json(productos || []);
+    // [NUEVO] Parámetros para paginación y filtros
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const categoriaId = req.query.categoria || '';
+    const buscar = req.query.buscar || '';
+
+    const resultado = await ProductosRepository.obtenerPaginado(page, limit, categoriaId, buscar);
+    console.log(`📦 Productos encontrados: ${resultado.productos.length} (Total: ${resultado.total})`);
+    
+    // [NUEVO] Devolver objeto con metadatos de paginación
+    res.json(resultado);
   } catch (error) {
     console.error('❌ Error obteniendo productos:', error);
     res.status(500).json({ error: error.message });

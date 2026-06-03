@@ -173,6 +173,13 @@ async function createTables() {
           return;
         }
 
+        // [NUEVO] Índices en Base de Datos para mejorar escalabilidad y consultas
+        db.run('CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoriaId)');
+        db.run('CREATE INDEX IF NOT EXISTS idx_ordenes_usuario ON ordenes(usuarioId)');
+        db.run('CREATE INDEX IF NOT EXISTS idx_carrito_usuario ON carrito(usuarioId)');
+        db.run('CREATE INDEX IF NOT EXISTS idx_resenas_producto ON resenas(productoId)');
+        db.run('CREATE INDEX IF NOT EXISTS idx_favoritos_usuario ON favoritos(usuarioId)');
+
         // Migraciones ligeras para BD antiguas
         db.all('PRAGMA table_info(categorias)', (colErr, columns) => {
           if (colErr) {

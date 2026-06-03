@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { initDB } = require('./src/config/database');
+// [NUEVO] Importar middlewares de seguridad y compresión
+const helmet = require('helmet');
+const compression = require('compression');
 
 // Importar controladores
 const authController = require('./src/controllers/authController');
@@ -17,6 +20,14 @@ const favoritosController = require('./src/controllers/favoritosController');
 
 const cors = require('cors');
 const app = express();
+
+// [NUEVO] Aplicar Helmet globalmente para seguridad, pero deshabilitando CSP para evitar bloqueos
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+
+// [NUEVO] Aplicar compresión GZIP
+app.use(compression());
 
 // Middleware
 app.use(cors({

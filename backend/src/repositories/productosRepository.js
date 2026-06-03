@@ -19,6 +19,52 @@ class ProductosRepository {
     });
   }
 
+  // [NUEVO] Método para obtener productos paginados y filtrados
+  static obtenerPaginado(page, limit, categoriaId, buscar) {
+    return new Promise((resolve, reject) => {
+      const db = getDB();
+      let query = 'SELECT * FROM productos WHERE activo = 1';
+      let countQuery = 'SELECT COUNT(*) as total FROM productos WHERE activo = 1';
+      const params = [];
+
+      if (categoriaId) {
+        query += ' AND categoriaId = ?';
+        countQuery += ' AND categoriaId = ?';
+        params.push(categoriaId);
+      }
+
+      if (buscar) {
+        query += ' AND (nombre LIKE ? OR descripcion LIKE ?)';
+        countQuery += ' AND (nombre LIKE ? OR descripcion LIKE ?)';
+        params.push(`%${buscar}%`, `%${buscar}%`);
+      }
+
+      query += ' ORDER BY nombre LIMIT ? OFFSET ?';
+      const offset = (page - 1) * limit;
+
+      db.get(countQuery, params, (err, row) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        const total = row.total;
+
+        db.all(query, [...params, limit, offset], (err, rows) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({
+            productos: rows || [],
+            total,
+            pagina: parseInt(page),
+            totalPaginas: Math.ceil(total / limit)
+          });
+        });
+      });
+    });
+  }
+
   static obtenerPorId(id) {
     return new Promise((resolve, reject) => {
       const db = getDB();
