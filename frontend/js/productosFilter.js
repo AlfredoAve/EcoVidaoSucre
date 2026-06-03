@@ -4,6 +4,10 @@ let productoSeleccionado = null;
 const usuarioActual = JSON.parse(localStorage.getItem('usuario') || 'null');
 const esAdmin = usuarioActual?.rol === 'admin';
 let favoritosIdsCatalogo = new Set();
+// [NUEVO] Estado de paginación
+let currentPage = 1;
+const LIMIT = 20;
+let totalPages = 1;
 
 async function ensureBootstrap() {
   if (window.bootstrap?.Modal) return;
@@ -29,9 +33,12 @@ async function ensureBootstrap() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await cargarFavoritosIdsCatalogo();
-  await cargarProductos();
-  await cargarCategorias();
+  // [NUEVO] Promise.all para cargar en paralelo
+  await Promise.all([
+    cargarFavoritosIdsCatalogo(),
+    cargarProductos(),
+    cargarCategorias()
+  ]);
   configurarEventos();
   aplicarFiltroDesdeURL();
 });
@@ -51,14 +58,74 @@ async function cargarFavoritosIdsCatalogo() {
   }
 }
 
-async function cargarProductos() {
+// [NUEVO] Lógica adaptada para consumir API paginada
+async function cargarProductos(append = false) {
   const container = document.getElementById('productsList');
+  const noResultsMsg = document.getElementById('noResultsMsg');
+  const termino = document.getElementById('searchInput')?.value || '';
+  
+  const seleccionadas = Array.from(document.querySelectorAll('.categoria-filter:checked')).map(el => el.value);
+  const categoriaId = seleccionadas.length > 0 ? seleccionadas[0] : ''; 
 
   try {
-    todosProductos = await APIService.obtenerProductos();
-    renderizarProductos(todosProductos);
+    const data = await APIService.obtenerProductos(currentPage, LIMIT, categoriaId, termino);
+    const productos = data.productos || [];
+    totalPages = data.totalPaginas || 1;
+
+    if (!append) {
+      todosProductos = productos;
+    } else {
+      todosProductos = [...todosProductos, ...productos];
+    }
+
+    renderizarConFiltroPrecio();
+    actualizarBotonCargarMas();
   } catch (error) {
     container.innerHTML = '<div class="col-12 text-danger">Error al cargar productos</div>';
+  }
+}
+
+// [NUEVO] Separar filtro de precio local
+function renderizarConFiltroPrecio() {
+  const minPrice = parseFloat(document.getElementById('minPrice')?.value || 0);
+  const maxPrice = parseFloat(document.getElementById('maxPrice')?.value || Infinity);
+  const productsList = document.getElementById('productsList');
+  const noResultsMsg = document.getElementById('noResultsMsg');
+
+  let filtrados = todosProductos.filter(p => p.precio >= minPrice && p.precio <= maxPrice);
+
+  if (filtrados.length === 0) {
+    productsList.style.display = 'none';
+    noResultsMsg.style.display = 'block';
+  } else {
+    productsList.style.display = '';
+    noResultsMsg.style.display = 'none';
+    renderizarProductos(filtrados);
+  }
+}
+
+// [NUEVO] Botón Cargar Más
+function actualizarBotonCargarMas() {
+  let btnContainer = document.getElementById('loadMoreContainer');
+  
+  if (!btnContainer) {
+    btnContainer = document.createElement('div');
+    btnContainer.id = 'loadMoreContainer';
+    btnContainer.className = 'col-12 text-center mt-4 mb-5';
+    btnContainer.innerHTML = '<button id="loadMoreBtn" class="btn btn-outline-success px-4 py-2"><i class="bi bi-arrow-down-circle"></i> Cargar más productos</button>';
+    const productsList = document.getElementById('productsList');
+    productsList.parentNode.insertBefore(btnContainer, productsList.nextSibling);
+    
+    document.getElementById('loadMoreBtn').addEventListener('click', () => {
+      currentPage++;
+      cargarProductos(true);
+    });
+  }
+
+  if (currentPage >= totalPages || totalPages === 0) {
+    btnContainer.style.display = 'none';
+  } else {
+    btnContainer.style.display = 'block';
   }
 }
 
@@ -96,7 +163,7 @@ function configurarEventos() {
   });
 
   // Filtro de precio
-  document.getElementById('filterBtn')?.addEventListener('click', aplicarFiltros);
+  document.getElementById('filterBtn')?.addEventListener('click', renderizarConFiltroPrecio);
 
   // Limpiar filtros
   document.getElementById('clearFiltersBtn')?.addEventListener('click', limpiarFiltros);
@@ -153,32 +220,9 @@ async function toggleFavoritoCatalogo(btn) {
 }
 
 function aplicarFiltros() {
-  const termino = document.getElementById('searchInput')?.value || '';
-  const minPrice = parseFloat(document.getElementById('minPrice')?.value || 0);
-  const maxPrice = parseFloat(document.getElementById('maxPrice')?.value || Infinity);
-
-  const categoriasSeleccionadas = Array.from(document.querySelectorAll('.categoria-filter:checked')).map(el => parseInt(el.value));
-
-  let filtrados = todosProductos.filter(p => {
-    const cumpleBusqueda = p.nombre.toLowerCase().includes(termino.toLowerCase()) ||
-                          p.descripcion?.toLowerCase().includes(termino.toLowerCase());
-    const cumplePrecio = p.precio >= minPrice && p.precio <= maxPrice;
-    const cumpleCategoria = categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(p.categoriaId);
-
-    return cumpleBusqueda && cumplePrecio && cumpleCategoria;
-  });
-
-  const productsList = document.getElementById('productsList');
-  const noResultsMsg = document.getElementById('noResultsMsg');
-
-  if (filtrados.length === 0) {
-    productsList.style.display = 'none';
-    noResultsMsg.style.display = 'block';
-  } else {
-    productsList.style.display = '';
-    noResultsMsg.style.display = 'none';
-    renderizarProductos(filtrados);
-  }
+  // [NUEVO] Al filtrar, volvemos a la página 1 y hacemos fetch
+  currentPage = 1;
+  cargarProductos(false);
 }
 
 function aplicarFiltroDesdeURL() {
@@ -199,10 +243,8 @@ function limpiarFiltros() {
   document.getElementById('maxPrice').value = '';
   document.querySelectorAll('.categoria-filter').forEach(el => el.checked = false);
   
-  const productsList = document.getElementById('productsList');
-  productsList.style.display = '';
-  document.getElementById('noResultsMsg').style.display = 'none';
-  renderizarProductos(todosProductos);
+  currentPage = 1;
+  cargarProductos(false);
 }
 
 function renderizarProductos(productos) {
@@ -219,6 +261,9 @@ function renderizarProductos(productos) {
             <img src="${APIService.getImageUrl(prod.imagen)}"
                  class="card-img-top eco-card-img"
                  alt="${escapeHtml(prod.nombre)}"
+                 loading="lazy"
+                 width="400"
+                 height="220"
                  onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             <button class="fav-btn ${esFavorito ? 'active' : ''}" type="button" data-product-id="${prod.id}" aria-label="Favorito">
               <i class="bi ${esFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i>
@@ -412,3 +457,4 @@ async function procesarAgregarCarrito(productoId, cantidad) {
 // Exponer en scope global para los onclick inline generados por JS
 window.abrirProducto = abrirProducto;
 window.agregarAlCarritoDesdeTarjeta = agregarAlCarritoDesdeTarjeta;
+

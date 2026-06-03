@@ -49,7 +49,7 @@ function actualizarTablaCarrito(carrito) {
       <tr>
         <td>
           <div class="d-flex gap-3">
-            <img src="${APIService.getImageUrl(item.imagen)}" style="width:50px; height:50px; object-fit:cover; border-radius:5px;" alt="${escapeHtml(item.nombre)}" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
+            <img src="${APIService.getImageUrl(item.imagen)}" style="width:50px; height:50px; object-fit:cover; border-radius:5px;" alt="${escapeHtml(item.nombre)}" loading="lazy" width="400" height="220" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             <div>
               <strong>${escapeHtml(item.nombre)}</strong>
             </div>
@@ -193,6 +193,21 @@ async function procesarPago(e) {
 function mostrarModalDireccion() {
   const modalEl = document.getElementById('addressModal');
   if (!modalEl) return;
+
+  // Pre-llenar datos del usuario si están disponibles
+  APIService.obtenerPerfil().then(usuario => {
+    if (usuario) {
+      if (document.getElementById('address') && !document.getElementById('address').value) {
+        document.getElementById('address').value = usuario.direccion || '';
+      }
+      if (document.getElementById('city') && !document.getElementById('city').value) {
+        document.getElementById('city').value = usuario.ciudad || '';
+      }
+      if (document.getElementById('phone') && !document.getElementById('phone').value) {
+        document.getElementById('phone').value = usuario.telefono || '';
+      }
+    }
+  }).catch(err => console.error('Error pre-llenando dirección:', err));
 
   if (window.bootstrap?.Modal) {
     const modal = new window.bootstrap.Modal(modalEl);

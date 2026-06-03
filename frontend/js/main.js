@@ -4,9 +4,12 @@ const esAdminHome = usuarioActualHome?.rol === 'admin';
 let favoritosIdsHome = new Set();
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await cargarFavoritosIdsHome();
-  await cargarCategorias();
-  await cargarProductosDestacados();
+  // [NUEVO] Promise.all para cargar en paralelo
+  await Promise.all([
+    cargarFavoritosIdsHome(),
+    cargarCategorias(),
+    cargarProductosDestacados()
+  ]);
   initHeroCarousel();
 });
 
@@ -63,6 +66,9 @@ async function cargarCategorias() {
                  class="card-img-top"
                  style="height:160px;object-fit:cover;"
                  alt="${escapeHtml(cat.nombre)}"
+                 loading="lazy"
+                 width="400"
+                 height="220"
                  onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#1b4332;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
             <div class="card-body text-center" style="padding:12px;">
@@ -87,7 +93,9 @@ async function cargarProductosDestacados() {
   if (!container) return;
 
   try {
-    const productos = await APIService.obtenerProductos();
+    const data = await APIService.obtenerProductos();
+    // [NUEVO] Extraer productos si la respuesta es paginada
+    const productos = data.productos ? data.productos : data;
 
     if (!productos || productos.length === 0) {
       container.innerHTML = '<div class="col-12 text-center text-muted">No hay productos disponibles</div>';
@@ -108,6 +116,9 @@ async function cargarProductosDestacados() {
               <img src="${APIService.getImageUrl(prod.imagen)}"
                    class="card-img-top eco-card-img"
                    alt="${escapeHtml(prod.nombre)}"
+                   loading="lazy"
+                   width="400"
+                   height="220"
                    onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
               <button class="fav-btn ${esFavorito ? 'active' : ''}" type="button" data-product-id="${prod.id}" aria-label="Favorito">
                 <i class="bi ${esFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i>

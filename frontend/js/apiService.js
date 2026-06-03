@@ -83,8 +83,15 @@ class APIService {
   }
 
   // PRODUCTOS
-  static async obtenerProductos() {
-    const res = await fetch(`${API_BASE}/productos`, {
+  // [NUEVO] Soporte para paginación y filtros en la llamada a la API
+  static async obtenerProductos(page = 1, limit = 20, categoriaId = '', buscar = '') {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page);
+    if (limit) params.append('limit', limit);
+    if (categoriaId) params.append('categoria', categoriaId);
+    if (buscar) params.append('buscar', buscar);
+    
+    const res = await fetch(`${API_BASE}/productos?${params.toString()}`, {
       headers: this.getHeaders(false)
     });
     return res.json();
@@ -194,89 +201,32 @@ class APIService {
 
   static async descargarFactura(id) {
     const token = this.getToken();
-    if (!token) {
-      window.location.href = 'login.html';
-      return;
-    }
+    if (!token) { window.location.href = 'login.html'; return; }
 
-    // 1. Obtener los datos completos de la orden
-    const orden = await this.obtenerOrdenPorId(id);
-    if (orden.error) throw new Error(orden.error);
+    // Descargar PDF directamente desde el backend (diseño premium generado con pdfkit)
+    const baseUrl = API_BASE.replace('/api', '');
+    const url = `${API_BASE}/ordenes/${id}/factura`;
 
-    // 2. Inyectar dinámicamente jsPDF en el navegador si no existe
-    if (!window.jspdf) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        script.onload = resolve;
-        script.onerror = () => reject(new Error('No se pudo cargar el generador de PDF'));
-        document.head.appendChild(script);
-      });
-    }
-
-    // 3. Generar el PDF directamente en el frontend
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    const date = new Date(orden.fechaCreacion);
-    const year = date.getFullYear();
-    const shortId = String(orden.id).padStart(8, '0');
-    const invoiceNum = `ECO-${year}-${shortId}`;
-
-    // Títulos y Membrete
-    doc.setFontSize(22);
-    doc.setTextColor(27, 67, 50); // Verde oscuro EcoVida
-    doc.text("EcoVida", 14, 20);
-    
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text("COMPROBANTE DE COMPRA", 14, 30);
-
-    // Datos de la orden
-    doc.setFontSize(11);
-    doc.text(`Número: ${invoiceNum}`, 14, 40);
-    doc.text(`Fecha: ${date.toLocaleString('es-BO')}`, 14, 46);
-    doc.setFont(undefined, 'bold');
-    doc.text("Datos del Cliente:", 14, 56);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nombre: ${orden.nombre || 'Cliente General'}`, 14, 62);
-    doc.text(`Email: ${orden.email || 'N/A'}`, 14, 68);
-    doc.text(`Método de Pago: ${(orden.metodoPago || 'No especificado').toUpperCase()}`, 14, 74);
-
-    // Tabla de productos
-    doc.setFillColor(240, 240, 240);
-    doc.rect(14, 82, 182, 8, 'F');
-    doc.setFont(undefined, 'bold');
-    doc.text("Producto", 16, 88);
-    doc.text("Cant.", 130, 88);
-    doc.text("Precio", 150, 88);
-    doc.text("Subtotal", 175, 88);
-
-    doc.setFont(undefined, 'normal');
-    let y = 96;
-    (orden.productos || []).forEach(p => {
-      doc.text(String(p.nombre).substring(0, 45), 16, y);
-      doc.text(String(p.cantidad), 130, y);
-      doc.text(`Bs ${Number(p.precio).toFixed(2)}`, 150, y);
-      doc.text(`Bs ${(p.cantidad * p.precio).toFixed(2)}`, 175, y);
-      y += 8;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    doc.setDrawColor(200, 200, 200);
-    doc.line(14, y - 4, 196, y - 4);
-    y += 4;
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Error al descargar la factura');
+    }
 
-    // Total y Footer
-    doc.setFont(undefined, 'bold');
-    doc.text(`TOTAL PAGADO: Bs ${Number(orden.total).toFixed(2)}`, 130, y);
-
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(120, 120, 120);
-    doc.text("Nota: Factura fiscal disponible previa solicitud con NIT.", 14, y + 20);
-
-    // 4. Forzar descarga local
-    doc.save(`${invoiceNum}.pdf`);
+    // Convertir respuesta a blob y forzar descarga
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const year = new Date().getFullYear();
+    a.href = blobUrl;
+    a.download = `ECO-${year}-${String(id).padStart(8,'0')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
   }
 
   // RESEÑAS

@@ -2279,3 +2279,8 @@ section { padding: 56px 0; }
 .footer-links a[href="terminos.html#envios"] {
   display: none !important;
 }
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -211,7 +211,7 @@ function renderizarTablaProductos() {
           </div>
         </td>
         <td><span class="badge bg-secondary">${escapeHtml(catNombre)}</span></td>
-        <td>$${prod.precio.toFixed(2)}</td>
+        <td>Bs. ${prod.precio.toFixed(2)}</td>
         <td><span class="badge ${stockBadge}">${prod.stock}</span></td>
         <td>
           <div class="d-flex gap-1">
@@ -676,7 +676,7 @@ function renderizarTablaOrdenes() {
           ${escapeHtml(orden.nombre || 'Cliente')}<br>
           <small class="text-muted">${escapeHtml(orden.email || '')}</small>
         </td>
-        <td>$${Number(orden.total || 0).toFixed(2)}</td>
+        <td>Bs. ${Number(orden.total || 0).toFixed(2)}</td>
         <td><span class="badge ${clsBadge}">${orden.estado || 'pendiente'}</span></td>
         <td><small>${fecha}</small></td>
         <td>
@@ -703,7 +703,14 @@ function verDetalleOrden(ordenId) {
   document.getElementById('orderDetailTitle').textContent   = `Orden #${orden.id}`;
   document.getElementById('orderDetailClient').textContent  = orden.nombre    || 'Cliente';
   document.getElementById('orderDetailEmail').textContent   = orden.email     || '-';
-  document.getElementById('orderDetailAddress').textContent = orden.direccionEnvio || 'Sin dirección';
+  // Teléfono del perfil
+  const telEl = document.getElementById('orderDetailPhone');
+  if (telEl) telEl.textContent = orden.telefono || 'No registrado';
+  // Dirección: preferir la del perfil del cliente, fallback a dirección de pago
+  const dirPerfil = orden.direccionPerfil
+    ? (orden.direccionPerfil + (orden.ciudad ? ', ' + orden.ciudad : ''))
+    : null;
+  document.getElementById('orderDetailAddress').textContent = dirPerfil || orden.direccionEnvio || 'Sin dirección';
 
   const tbody = document.getElementById('orderDetailProductsBody');
   tbody.innerHTML = productos.length
@@ -714,13 +721,13 @@ function verDetalleOrden(ordenId) {
           <td>${i + 1}</td>
           <td>${escapeHtml(p.nombre || 'Producto')}</td>
           <td>${cantidad}</td>
-          <td>$${precio.toFixed(2)}</td>
-          <td>$${(precio * cantidad).toFixed(2)}</td>
+          <td>Bs. ${precio.toFixed(2)}</td>
+          <td>Bs. ${(precio * cantidad).toFixed(2)}</td>
         </tr>`;
       }).join('')
     : '<tr><td colspan="5" class="text-muted text-center py-3">Sin productos</td></tr>';
 
-  document.getElementById('orderDetailTotal').textContent = `$${Number(orden.total || 0).toFixed(2)}`;
+  document.getElementById('orderDetailTotal').textContent = `Bs. ${Number(orden.total || 0).toFixed(2)}`;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('orderDetailModal')).show();
 }
 

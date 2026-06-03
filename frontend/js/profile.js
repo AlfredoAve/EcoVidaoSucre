@@ -205,7 +205,7 @@ async function cargarOrdenes() {
             <span class="badge bg-info">${escapeHtml(orden.estado)}</span>
           </div>
           <p class="mb-1 text-muted small">Fecha: ${new Date(orden.fechaCreacion).toLocaleDateString()}</p>
-          <p class="mb-1 text-muted small">Total: <strong class="text-success">$${orden.total.toFixed(2)}</strong></p>
+          <p class="mb-1 text-muted small">Total: <strong class="text-success">Bs ${orden.total.toFixed(2)}</strong></p>
           <p class="mb-0 text-muted small">Envío a: ${escapeHtml(orden.direccionEnvio)}</p>
           <div class="mt-3 pt-2 border-top d-flex gap-2">
             <button class="btn btn-sm btn-outline-primary" onclick="window.verDetalleOrdenCliente(${orden.id})">
@@ -287,7 +287,8 @@ window.verDetalleOrdenCliente = async function(ordenId) {
               </div>
               <div class="modal-body">
                 <p class="mb-1 text-muted small">Estado: <strong id="clientOrdEstado" class="text-dark"></strong></p>
-                <p class="mb-3 text-muted small">Envío: <span id="clientOrdEnvio"></span></p>
+                <p class="mb-1 text-muted small">Teléfono: <span id="clientOrdTelefono"></span></p>
+                <p class="mb-3 text-muted small">Dirección: <span id="clientOrdEnvio"></span></p>
                 <div class="table-responsive">
                   <table class="table table-sm align-middle">
                     <thead class="table-light">
@@ -318,16 +319,21 @@ window.verDetalleOrdenCliente = async function(ordenId) {
 
     document.getElementById('clientOrdId').textContent = orden.id;
     document.getElementById('clientOrdEstado').textContent = (orden.estado || '').toUpperCase();
-    document.getElementById('clientOrdEnvio').textContent = orden.direccionEnvio || 'N/A';
-    document.getElementById('clientOrdTotal').textContent = '$' + orden.total.toFixed(2);
+    document.getElementById('clientOrdTelefono').textContent = orden.telefono || 'No registrado';
+    // Mostrar dirección del perfil del cliente, no la dirección de pago
+    const dirPerfil = orden.direccionPerfil
+      ? (orden.direccionPerfil + (orden.ciudad ? ', ' + orden.ciudad : ''))
+      : null;
+    document.getElementById('clientOrdEnvio').textContent = dirPerfil || orden.direccionEnvio || 'N/A';
+    document.getElementById('clientOrdTotal').textContent = 'Bs ' + orden.total.toFixed(2);
     
     const tbody = document.getElementById('clientOrdProducts');
     tbody.innerHTML = (orden.productos || []).map(p => `
       <tr>
         <td>${escapeHtml(p.nombre)}</td>
         <td>${p.cantidad}</td>
-        <td>$${p.precio.toFixed(2)}</td>
-        <td>$${(p.cantidad * p.precio).toFixed(2)}</td>
+        <td>Bs ${p.precio.toFixed(2)}</td>
+        <td>Bs ${(p.cantidad * p.precio).toFixed(2)}</td>
       </tr>
     `).join('');
 
