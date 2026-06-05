@@ -271,7 +271,7 @@ router.put('/:id/confirmar-recepcion', authMiddleware, async (req, res) => {
     if (orden.usuarioId !== req.usuario.id) {
       return res.status(403).json({ error: 'No tienes permiso para confirmar esta orden' });
     }
-    if (!['enviado', 'entrega_reportada'].includes(orden.estado)) {
+    if (orden.estado !== 'enviado') {
       return res.status(400).json({
         error: 'La recepción solo puede confirmarse cuando la orden está enviada'
       });

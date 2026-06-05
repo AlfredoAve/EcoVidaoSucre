@@ -7,7 +7,7 @@ const router = express.Router();
 // GET /api/productos - Listar todos los productos
 router.get('/', async (req, res) => {
   try {
-    // [NUEVO] Parámetros para paginación y filtros
+    // Parametros para paginacion y filtros
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const categoriaId = req.query.categoria || '';
@@ -15,12 +15,11 @@ router.get('/', async (req, res) => {
     const destacado = ['1', 'true'].includes(String(req.query.destacado).toLowerCase()) ? 1 : '';
 
     const resultado = await ProductosRepository.obtenerPaginado(page, limit, categoriaId, buscar, destacado);
-    console.log(`📦 Productos encontrados: ${resultado.productos.length} (Total: ${resultado.total})`);
     
-    // [NUEVO] Devolver objeto con metadatos de paginación
+    // Devolver objeto con metadatos de paginacion
     res.json(resultado);
   } catch (error) {
-    console.error('❌ Error obteniendo productos:', error);
+    console.error('Error obteniendo productos:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -41,7 +40,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// GET /api/productos/categoria/:id - Productos por categoría
+// GET /api/productos/categoria/:id - Productos por categoria
 router.get('/categoria/:id', async (req, res) => {
   try {
     const { id } = req.params;

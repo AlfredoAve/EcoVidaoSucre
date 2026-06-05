@@ -166,13 +166,6 @@ class CheckoutService {
         metodoPago: orden.metodoPago,
         logoPath
       });
-      if (MERCADOPAGO_TOKEN) {
-        const linkPago = await this.crearPreferenciaMP({
-          ordenId: ordenData.ordenId,
-          ...orden
-        });
-        return { ...ordenData, linkPago };
-      }
       return ordenData;
     } catch (error) {
       throw error;
