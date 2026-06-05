@@ -49,6 +49,10 @@
           <a class="nav-link tab-link profile-nav-link" data-tab="ordenes" href="#">
             <i class="bi bi-bag-check"></i> Mis Órdenes
           </a>
+          <a class="nav-link tab-link profile-nav-link" data-tab="notificaciones" href="#">
+            <i class="bi bi-bell"></i> Notificaciones
+            <span class="badge bg-danger ms-auto" id="profileNotificationCount" style="display:none;">0</span>
+          </a>
           <a class="nav-link tab-link profile-nav-link" data-tab="resenas" href="#">
             <i class="bi bi-star"></i> Mis Reseñas
           </a>
@@ -64,7 +68,7 @@
         <div class="tab-content" id="perfil-tab">
           <div class="profile-card">
             <h4 class="profile-card-title">Información Personal</h4>
-            <form id="profileForm" novalidate>
+            <form id="profileForm">
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="profile-label" for="nombre">Nombre Completo</label>
@@ -76,15 +80,15 @@
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="profile-label" for="telefono">Teléfono</label>
-                  <input class="profile-input" id="telefono" type="tel" autocomplete="tel">
+                  <input class="profile-input" id="telefono" required type="tel" autocomplete="tel">
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="profile-label" for="ciudad">Ciudad</label>
-                  <input class="profile-input" id="ciudad" type="text" autocomplete="address-level2">
+                  <input class="profile-input" id="ciudad" required type="text" autocomplete="address-level2">
                 </div>
                 <div class="col-12 mb-4">
                   <label class="profile-label" for="direccion">Dirección</label>
-                  <textarea class="profile-input" id="direccion" rows="3" autocomplete="street-address"></textarea>
+                  <textarea class="profile-input" id="direccion" required rows="3" autocomplete="street-address"></textarea>
                 </div>
               </div>
               <button class="btn-profile-save" type="submit">
@@ -101,6 +105,19 @@
           <div class="profile-card">
             <h4 class="profile-card-title">Mis Órdenes</h4>
             <div id="ordenesList"></div>
+          </div>
+        </div>
+
+        <!-- Pestaña: Notificaciones -->
+        <div class="tab-content" id="notificaciones-tab" style="display:none;">
+          <div class="profile-card">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+              <h4 class="profile-card-title mb-0">Notificaciones</h4>
+              <button class="btn btn-sm btn-outline-success" id="markAllNotificationsBtn" type="button">
+                Marcar todas como leídas
+              </button>
+            </div>
+            <div id="notificacionesList"></div>
           </div>
         </div>
 

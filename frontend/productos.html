@@ -43,47 +43,46 @@
 
     <!-- Filtros -->
     <div class="filters-panel" role="search" aria-label="Filtros de productos">
-      <div class="filters-row">
-        <!-- Buscador Superior -->
-        <div class="filters-group">
-          <div class="filters-search-wrapper">
-            <i class="bi bi-search filters-search-icon"></i>
-            <input class="filters-search-input" id="searchInput" placeholder="Buscar productos naturales..." type="text" autocomplete="off">
-          </div>
+      <div class="filters-search-line">
+        <div class="filters-search-wrapper">
+          <i class="bi bi-search filters-search-icon"></i>
+          <input class="filters-search-input" id="searchInput" placeholder="Buscar por nombre, miel, té, aceite..." type="text" autocomplete="off">
         </div>
+        <button class="btn-clear filters-clear-top" id="clearFiltersBtn" type="button">Limpiar</button>
+      </div>
 
-        <!-- Categorías (Medio) -->
-        <div class="filters-group">
+      <div class="filters-category-row">
+        <div class="filters-label-wrap">
           <label class="filters-label">Categorías</label>
+        </div>
+        <div class="filters-chips-scroll" aria-label="Categorías disponibles">
           <div class="filters-chips" id="categoriesList" role="group" aria-label="Filtrar por categoría">
             <div class="spinner-border spinner-border-sm text-success" role="status">
               <span class="visually-hidden">Cargando...</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Precio y Acciones (Abajo) -->
-        <div class="filters-bottom-row">
-          <div class="filters-price-group">
-            <div class="filters-price-input-wrap">
-              <label for="minPrice">Mín (Bs)</label>
-              <input aria-label="Precio mínimo" class="filters-input-sm" id="minPrice" min="0" placeholder="0" type="number">
+      <div class="filters-bottom-row">
+        <div class="filters-price-group" aria-label="Rango de precio">
+          <div class="price-range-control">
+            <span class="price-range-value" id="priceMinLabel">Bs 0</span>
+            <div class="price-range-slider" aria-label="Rango de precio de productos">
+              <div class="price-range-track">
+                <div class="price-range-fill" id="priceRangeFill"></div>
+              </div>
+              <input aria-label="Precio mínimo" class="price-range-input" id="minPriceRange" min="0" max="1000" step="5" value="0" type="range">
+              <input aria-label="Precio máximo" class="price-range-input" id="maxPriceRange" min="0" max="1000" step="5" value="1000" type="range">
             </div>
-            <span class="text-muted mt-4">-</span>
-            <div class="filters-price-input-wrap">
-              <label for="maxPrice">Máx (Bs)</label>
-              <input aria-label="Precio máximo" class="filters-input-sm" id="maxPrice" min="0" placeholder="1000" type="number">
-            </div>
+            <span class="price-range-value" id="priceMaxLabel">Bs 1000</span>
           </div>
-          
-          <div class="filters-actions">
-            <button class="btn-clear" id="clearFiltersBtn">
-              <i class="bi bi-x-circle"></i> Limpiar
-            </button>
-            <button class="btn-apply" id="filterBtn">
-              Aplicar Filtros
-            </button>
-          </div>
+        </div>
+
+        <div class="filters-actions">
+          <button class="btn-apply" id="filterBtn" type="button">
+            Aplicar Filtros
+          </button>
         </div>
       </div>
     </div>
@@ -108,31 +107,53 @@
 
   <!-- Modal de producto -->
   <div aria-hidden="true" aria-labelledby="productTitle" class="modal fade" id="productModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
       <div class="modal-content eco-modal-premium">
         <button aria-label="Cerrar" class="btn-close modal-close-floating" data-bs-dismiss="modal" type="button"></button>
         <div class="modal-body p-0">
-          <div class="modal-image-top">
-            <img alt="Imagen del producto seleccionado" id="productImage" src="">
-            <div class="modal-img-overlay"></div>
+          <div class="product-modal-main">
+            <div class="modal-image-top">
+              <img alt="Imagen del producto seleccionado" id="productImage" src="">
+              <div class="modal-img-overlay"></div>
+            </div>
+            <div class="modal-details-content">
+              <span class="modal-category-label" id="productCategory"></span>
+              <h2 class="modal-product-title" id="productTitle"></h2>
+              <div id="productRatingSummary"></div>
+              <div class="modal-price-stock">
+                <span class="modal-price">Bs <span id="productPrice">0</span></span>
+                <div class="stock-info">
+                  <i class="bi bi-box-seam"></i> Stock disponible: <strong id="productStock">0</strong>
+                </div>
+              </div>
+              <p id="productDesc" class="modal-desc"></p>
+
+              <section class="product-benefits-section" id="productBenefitsSection" style="display:none;">
+                <h5 class="product-benefits-title">Beneficios</h5>
+                <div class="product-benefits-grid" id="productBenefits"></div>
+              </section>
+
+              <div class="purchase-actions">
+                <label class="form-label fw-bold text-dark mb-2" for="productQty">Cantidad</label>
+                <div class="d-flex gap-3 align-items-end flex-wrap">
+                  <div class="qty-input-wrap">
+                    <input class="form-control" id="productQty" min="1" type="number" value="1">
+                  </div>
+                  <button class="btn btn-success btn-add-cart-modal flex-grow-1" id="addToCartBtn" type="button">
+                    <i class="bi bi-bag-plus fs-5 me-2"></i> Agregar al Carrito
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="modal-details-content p-4 p-md-5">
-            <h2 class="modal-product-title" id="productTitle"></h2>
-            <div class="price-wrap mb-3">
-              <span class="modal-price">Bs <span id="productPrice">0</span></span>
-            </div>
-            <p id="productDesc" class="modal-desc"></p>
-            
-            <div class="stock-info mb-4">
-              <i class="bi bi-box-seam"></i> Stock disponible: <strong id="productStock">0</strong> unidades
-            </div>
-            
+
+          <div class="product-modal-reviews">
             <!-- Sección de Reseñas Premium -->
-            <div class="product-reviews-section mb-4">
+            <div class="product-reviews-section">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="reviews-title m-0">Reseñas del Producto</h5>
                 <div id="reviewHeaderActions">
-                  <button class="btn btn-outline-success review-btn-trigger" id="btnShowReviewForm" style="display:none;" onclick="document.getElementById('reviewFormContainer').style.display='block'">Escribir Reseña</button>
+                  <button class="btn btn-outline-success review-btn-trigger" id="btnShowReviewForm" style="display:none;">Escribir Reseña</button>
                   <a href="login.html" class="btn btn-outline-secondary review-btn-trigger" id="btnLoginToReview" style="display:none;"><i class="bi bi-box-arrow-in-right"></i> Inicia sesión para opinar</a>
                 </div>
               </div>
@@ -155,19 +176,7 @@
                 </div>
               </div>
             </div>
-            
-            <div class="purchase-actions mt-4">
-              <label class="form-label fw-bold text-dark mb-2" for="productQty">Cantidad</label>
-              <div class="d-flex gap-3 align-items-end flex-wrap">
-                <div class="qty-input-wrap">
-                  <input class="form-control" id="productQty" min="1" type="number" value="1">
-                </div>
-                <button class="btn btn-success btn-add-cart-modal flex-grow-1" id="addToCartBtn" type="button">
-                  <i class="bi bi-bag-plus fs-5 me-2"></i> Agregar al Carrito
-                </button>
-                </div>
-              </div>
-            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -262,7 +271,6 @@
           const usuario = usuarioStr ? JSON.parse(usuarioStr) : null;
           
           if(token && usuario && usuario.rol !== 'admin') {
-            document.getElementById('btnShowReviewForm').style.display = 'inline-block';
             document.getElementById('btnLoginToReview').style.display = 'none';
           } else if(token && usuario && usuario.rol === 'admin') {
             document.getElementById('btnShowReviewForm').style.display = 'none';

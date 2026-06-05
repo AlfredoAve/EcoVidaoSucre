@@ -8,7 +8,10 @@ let productosDB       = [];
 let categoriasDB      = [];
 let usuariosDB        = [];
 let todasOrdenes      = [];
+let ordenesDB         = [];
 let ordenPendienteEstado = null;
+let filtroOrdenes = 'todas';
+let editandoSeguimiento = false;
 let todasResenasAdmin = [];
 let pendingConfirmFn  = null;
 
@@ -97,19 +100,31 @@ function configurarEventos() {
 
   document.getElementById('shippedOrderActionBtn')?.addEventListener('click', async () => {
     if (!ordenPendienteEstado) return;
-    await cambiarEstadoOrden(ordenPendienteEstado.ordenId, ordenPendienteEstado.estado);
+    const numeroSeguimiento = document.getElementById('shippedOrderTracking')?.value.trim() || '';
+    if (!numeroSeguimiento) {
+      mostrarToast('Agrega una referencia o número de seguimiento', 'warning');
+      return;
+    }
+    if (editandoSeguimiento) {
+      await actualizarSeguimientoOrden(ordenPendienteEstado.ordenId, numeroSeguimiento);
+    } else {
+      await cambiarEstadoOrden(ordenPendienteEstado.ordenId, ordenPendienteEstado.estado, { numeroSeguimiento });
+    }
     bootstrap.Modal.getInstance(document.getElementById('shippedOrderModal'))?.hide();
     ordenPendienteEstado = null;
-  });
-
-  document.getElementById('deliveredOrderActionBtn')?.addEventListener('click', async () => {
-    if (!ordenPendienteEstado) return;
-    await cambiarEstadoOrden(ordenPendienteEstado.ordenId, ordenPendienteEstado.estado);
-    bootstrap.Modal.getInstance(document.getElementById('deliveredOrderModal'))?.hide();
-    ordenPendienteEstado = null;
+    editandoSeguimiento = false;
   });
 
   document.getElementById('reloadMensajesBtn')?.addEventListener('click', cargarMensajes);
+
+  document.querySelectorAll('#orderFilters [data-status]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      filtroOrdenes = chip.dataset.status;
+      document.querySelectorAll('#orderFilters [data-status]').forEach(item => item.classList.remove('active'));
+      chip.classList.add('active');
+      renderizarTablaOrdenes();
+    });
+  });
 }
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
@@ -184,7 +199,8 @@ async function subirImagen(file) {
 // ═══════════════════════════════════════════════════════════════════════════════
 async function cargarProductos() {
   try {
-    todosProductos = await APIService.obtenerProductos();
+    const response = await apiFetch('/admin/productos');
+    todosProductos = Array.isArray(response) ? response.filter(prod => esActivo(prod.activo)) : [];
     renderizarTablaProductos();
   } catch (e) {
     console.error('Error cargando productos:', e);
@@ -194,7 +210,7 @@ async function cargarProductos() {
 function renderizarTablaProductos() {
   const tbody = document.getElementById('productosTableBody');
   if (!todosProductos.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No hay productos</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No hay productos</td></tr>';
     return;
   }
   tbody.innerHTML = todosProductos.map(prod => {
@@ -213,12 +229,13 @@ function renderizarTablaProductos() {
         <td><span class="badge bg-secondary">${escapeHtml(catNombre)}</span></td>
         <td>Bs. ${prod.precio.toFixed(2)}</td>
         <td><span class="badge ${stockBadge}">${prod.stock}</span></td>
+        <td><span class="badge ${esActivo(prod.destacado) ? 'bg-warning text-dark' : 'bg-secondary'}">${esActivo(prod.destacado) ? 'Sí' : 'No'}</span></td>
         <td>
           <div class="d-flex gap-1">
             <button class="btn btn-sm btn-outline-warning" onclick="abrirEditarProducto(${prod.id})" title="Editar">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarProducto(${prod.id})" title="Eliminar">
+            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarProducto(${prod.id})" title="Desactivar">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -244,6 +261,8 @@ function abrirNuevoProducto() {
   document.getElementById('productForm').reset();
   document.getElementById('prodImagenFile').value = '';
   document.getElementById('prodImagenUrl').value = '';
+  document.getElementById('prodDestacado').checked = false;
+  document.getElementById('prodBeneficios').value = '';
   document.getElementById('productModalTitle').textContent = 'Nuevo Producto';
   poblarSelectCategorias();
   bootstrap.Modal.getOrCreateInstance(document.getElementById('productModal')).show();
@@ -259,8 +278,10 @@ function abrirEditarProducto(productoId) {
   document.getElementById('prodDesc').value    = prod.descripcion || '';
   document.getElementById('prodPrecio').value  = prod.precio;
   document.getElementById('prodStock').value   = prod.stock;
+  document.getElementById('prodBeneficios').value = (prod.beneficios || []).join('\n');
   document.getElementById('prodImagenFile').value = '';
   document.getElementById('prodImagenUrl').value = prod.imagen || '';
+  document.getElementById('prodDestacado').checked = esActivo(prod.destacado);
   poblarSelectCategorias(prod.categoriaId);
 
   bootstrap.Modal.getOrCreateInstance(document.getElementById('productModal')).show();
@@ -281,6 +302,8 @@ async function guardarProducto(e) {
     precio:      parseFloat(document.getElementById('prodPrecio').value),
     stock:       parseInt(document.getElementById('prodStock').value),
     categoriaId: parseInt(document.getElementById('prodCategoria').value),
+    destacado:   document.getElementById('prodDestacado').checked,
+    beneficios:  document.getElementById('prodBeneficios').value,
     imagen:      ''
   };
 
@@ -311,15 +334,15 @@ async function guardarProducto(e) {
 
 function confirmarEliminarProducto(productoId) {
   const prod = todosProductos.find(p => p.id === productoId) || productosDB.find(p => p.id === productoId);
-  confirmar(`¿Eliminar "${prod?.nombre || 'este producto'}"? No se puede deshacer.`, async () => {
+  confirmar(`¿Desactivar "${prod?.nombre || 'este producto'}"? Podrás volver a activarlo desde Base de datos.`, async () => {
     try {
       const result = await apiFetch(`/admin/productos/${productoId}`, { method: 'DELETE' });
       if (result.error) { mostrarToast(result.error, 'error'); return; }
-      mostrarToast('Producto eliminado');
+      mostrarToast('Producto desactivado');
       await cargarProductos();
       await cargarBaseDatos();
     } catch (err) {
-      mostrarToast('Error al eliminar el producto', 'error');
+      mostrarToast('Error al desactivar el producto', 'error');
     }
   });
 }
@@ -327,6 +350,22 @@ function confirmarEliminarProducto(productoId) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // CATEGORÍAS
 // ═══════════════════════════════════════════════════════════════════════════════
+function confirmarEliminarProductoDefinitivo(productoId) {
+  const prod = todosProductos.find(p => p.id === productoId) || productosDB.find(p => p.id === productoId);
+  confirmar(`¿Eliminar definitivamente "${prod?.nombre || 'este producto'}" de la base de datos? Se borran carrito, favoritos y reseñas asociadas; las órdenes conservan el nombre del producto como historial.`, async () => {
+    try {
+      const result = await apiFetch(`/admin/productos/${productoId}/definitivo`, { method: 'DELETE' });
+      if (result.error) { mostrarToast(result.error, 'error'); return; }
+      mostrarToast(result.mensaje || 'Producto eliminado definitivamente');
+      await cargarProductos();
+      await cargarBaseDatos();
+      await cargarResenasAdmin();
+    } catch (err) {
+      mostrarToast('Error al eliminar definitivamente el producto', 'error');
+    }
+  });
+}
+
 async function cargarCategorias() {
   try {
     todasCategorias = await APIService.obtenerCategorias();
@@ -446,31 +485,37 @@ async function cargarBaseDatos() {
   const prodBody = document.getElementById('dbProductosTableBody');
   const catBody = document.getElementById('dbCategoriasTableBody');
   const userBody = document.getElementById('dbUsuariosTableBody');
-  if (!prodBody || !catBody || !userBody) return;
+  const orderBody = document.getElementById('dbOrdenesTableBody');
+  if (!prodBody || !catBody || !userBody || !orderBody) return;
 
   prodBody.innerHTML = '<tr><td colspan="4" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
   catBody.innerHTML = '<tr><td colspan="4" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
-  userBody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  userBody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  orderBody.innerHTML = '<tr><td colspan="7" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
 
   try {
-    const [productos, categorias, usuarios] = await Promise.all([
+    const [productos, categorias, usuarios, ordenes] = await Promise.all([
       apiFetch('/admin/productos'),
       apiFetch('/categorias/admin/todas'),
-      apiFetch('/users')
+      apiFetch('/users'),
+      apiFetch('/ordenes/admin/todas')
     ]);
 
     productosDB = Array.isArray(productos) ? productos : [];
     categoriasDB = Array.isArray(categorias) ? categorias : [];
     usuariosDB = Array.isArray(usuarios) ? usuarios : [];
+    ordenesDB = Array.isArray(ordenes) ? ordenes : [];
 
     renderResumenBaseDatos();
     renderTablaBaseProductos();
     renderTablaBaseCategorias();
     renderTablaBaseUsuarios();
+    renderTablaBaseOrdenes();
   } catch (e) {
     prodBody.innerHTML = '<tr><td colspan="4" class="text-danger text-center py-3">Error al cargar productos</td></tr>';
     catBody.innerHTML = '<tr><td colspan="4" class="text-danger text-center py-3">Error al cargar categorías</td></tr>';
-    userBody.innerHTML = '<tr><td colspan="5" class="text-danger text-center py-3">Error al cargar usuarios</td></tr>';
+    userBody.innerHTML = '<tr><td colspan="6" class="text-danger text-center py-3">Error al cargar usuarios</td></tr>';
+    orderBody.innerHTML = '<tr><td colspan="7" class="text-danger text-center py-3">Error al cargar ordenes</td></tr>';
   }
 }
 
@@ -478,6 +523,7 @@ function renderResumenBaseDatos() {
   const prodActivos = productosDB.filter(p => esActivo(p.activo)).length;
   const catActivas = categoriasDB.filter(c => esActivo(c.activa)).length;
   const userActivos = usuariosDB.filter(u => esActivo(u.activo)).length;
+  const ordenesEliminables = ordenesDB.filter(o => o.estado !== 'enviado').length;
 
   document.getElementById('dbProductosTotal').textContent = productosDB.length;
   document.getElementById('dbProductosActivos').textContent = prodActivos;
@@ -490,6 +536,9 @@ function renderResumenBaseDatos() {
   document.getElementById('dbUsuariosTotal').textContent = usuariosDB.length;
   document.getElementById('dbUsuariosActivos').textContent = userActivos;
   document.getElementById('dbUsuariosInactivos').textContent = usuariosDB.length - userActivos;
+
+  document.getElementById('dbOrdenesTotal').textContent = ordenesDB.length;
+  document.getElementById('dbOrdenesCerradas').textContent = ordenesEliminables;
 }
 
 function renderTablaBaseProductos() {
@@ -516,8 +565,11 @@ function renderTablaBaseProductos() {
               <button class="btn btn-sm btn-outline-success" onclick="activarProducto(${prod.id})" title="Activar">
                 <i class="bi bi-check2-circle"></i>
               </button>` : ''}
-            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarProducto(${prod.id})" title="Eliminar" ${!activo ? 'disabled' : ''}>
+            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarProducto(${prod.id})" title="Desactivar" ${!activo ? 'disabled' : ''}>
               <i class="bi bi-trash"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="confirmarEliminarProductoDefinitivo(${prod.id})" title="Eliminar definitivamente de la base de datos">
+              <i class="bi bi-trash3"></i>
             </button>
           </div>
         </td>
@@ -561,7 +613,7 @@ function renderTablaBaseCategorias() {
 function renderTablaBaseUsuarios() {
   const tbody = document.getElementById('dbUsuariosTableBody');
   if (!usuariosDB.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center py-3">No hay usuarios</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-3">No hay usuarios</td></tr>';
     return;
   }
 
@@ -575,6 +627,51 @@ function renderTablaBaseUsuarios() {
         <td>${escapeHtml(user.email || '')}</td>
         <td><span class="badge ${user.rol === 'admin' ? 'bg-danger' : 'bg-primary'}">${user.rol || '-'}</span></td>
         <td><span class="badge ${badge}">${activo ? 'Activo' : 'Inactivo'}</span></td>
+        <td>
+          <div class="d-flex gap-1">
+            ${user.rol !== 'admin' && activo ? `
+              <button class="btn btn-sm btn-outline-secondary" onclick="confirmarDesactivarUsuarioBase(${user.id})" title="Desactivar">
+                <i class="bi bi-person-dash"></i>
+              </button>` : ''}
+            ${user.rol !== 'admin' && !activo ? `
+              <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarUsuarioDefinitivo(${user.id})" title="Eliminar definitivamente">
+                <i class="bi bi-trash3"></i>
+              </button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function renderTablaBaseOrdenes() {
+  const tbody = document.getElementById('dbOrdenesTableBody');
+  if (!ordenesDB.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-3">No hay ordenes</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = ordenesDB.map(orden => {
+    const eliminable = orden.estado !== 'enviado';
+    const fecha = orden.fechaCreacion ? new Date(orden.fechaCreacion).toLocaleString('es-ES') : '-';
+    return `
+      <tr>
+        <td>#${orden.id}</td>
+        <td>
+          ${escapeHtml(orden.nombre || 'Cliente')}<br>
+          <small class="text-muted">${escapeHtml(orden.email || '')}</small>
+        </td>
+        <td>Bs. ${Number(orden.total || 0).toFixed(2)}</td>
+        <td><span class="badge bg-secondary">${escapeHtml(orden.estado || 'pendiente')}</span></td>
+        <td>${renderPagoOrden(orden)}</td>
+        <td><small>${fecha}</small></td>
+        <td>
+          <button class="btn btn-sm btn-outline-danger"
+                  onclick="confirmarEliminarOrdenDefinitiva(${orden.id})"
+                  title="${eliminable ? 'Eliminar definitivamente' : 'No se elimina mientras está enviada'}"
+                  ${eliminable ? '' : 'disabled'}>
+            <i class="bi bi-trash3"></i>
+          </button>
+        </td>
       </tr>`;
   }).join('');
 }
@@ -630,30 +727,42 @@ async function cargarEstadisticas() {
 async function cargarOrdenes() {
   const tbody = document.getElementById('ordenesTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
 
   try {
     const ordenes = await apiFetch('/ordenes/admin/todas');
     if (ordenes?.error) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-3">${ordenes.error}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-3">${ordenes.error}</td></tr>`;
       return;
     }
     todasOrdenes = Array.isArray(ordenes) ? ordenes : [];
     renderizarTablaOrdenes();
   } catch (e) {
     console.error('Error cargando órdenes:', e);
-    tbody.innerHTML = '<tr><td colspan="6" class="text-danger text-center py-3">Error al cargar órdenes</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-danger text-center py-3">Error al cargar órdenes</td></tr>';
   }
+}
+
+function renderPagoOrden(orden) {
+  const estadoPago = orden.estadoPago === 'pagado' ? 'pagado' : 'pendiente';
+  const metodo = orden.metodoPago === 'paypal' ? 'PayPal' : 'Contra entrega';
+  const badge = estadoPago === 'pagado' ? 'bg-success' : 'bg-warning text-dark';
+  const label = estadoPago === 'pagado' ? 'Pagado' : 'Pendiente';
+  return `<span class="badge ${badge}">${label}</span><br><small class="text-muted">${metodo}</small>`;
 }
 
 function renderizarTablaOrdenes() {
   const tbody = document.getElementById('ordenesTableBody');
-  if (!todasOrdenes.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-4">No hay órdenes registradas</td></tr>';
+  const ordenesVisibles = filtroOrdenes === 'todas'
+    ? todasOrdenes
+    : todasOrdenes.filter(orden => orden.estado === filtroOrdenes);
+
+  if (!ordenesVisibles.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">No hay órdenes registradas</td></tr>';
     return;
   }
 
-  tbody.innerHTML = todasOrdenes.map(orden => {
+  tbody.innerHTML = ordenesVisibles.map(orden => {
     const badges = {
       completada: 'bg-success',
       confirmada: 'bg-info text-dark',
@@ -662,12 +771,23 @@ function renderizarTablaOrdenes() {
       enviado:    'bg-primary',
       entregado:  'bg-success'
     };
+    const etiquetas = {
+      pendiente: 'pendiente',
+      confirmada: 'confirmada',
+      enviado: 'enviada',
+      entregado: 'recibida',
+      completada: 'completada',
+      cancelada: 'cancelada'
+    };
     const clsBadge      = badges[orden.estado] || 'bg-warning text-dark';
     const fecha         = new Date(orden.fechaCreacion).toLocaleString('es-ES');
     const esConfirmable = orden.estado === 'pendiente';
     const esEnviable    = orden.estado === 'confirmada';
-    const esEntregable  = orden.estado === 'enviado';
-    const esCancelable  = orden.estado === 'pendiente' || orden.estado === 'confirmada';
+    const esCompletable = orden.estado === 'entregado';
+    const esSeguimientoEditable = ['enviado'].includes(orden.estado);
+    const esEliminable = orden.estado !== 'enviado';
+    const esCancelable  = orden.estado === 'pendiente' ||
+      (orden.estado === 'confirmada' && orden.metodoPago !== 'paypal');
 
     return `
       <tr>
@@ -677,7 +797,8 @@ function renderizarTablaOrdenes() {
           <small class="text-muted">${escapeHtml(orden.email || '')}</small>
         </td>
         <td>Bs. ${Number(orden.total || 0).toFixed(2)}</td>
-        <td><span class="badge ${clsBadge}">${orden.estado || 'pendiente'}</span></td>
+        <td><span class="badge ${clsBadge}">${etiquetas[orden.estado] || orden.estado || 'pendiente'}</span></td>
+        <td>${renderPagoOrden(orden)}</td>
         <td><small>${fecha}</small></td>
         <td>
           <div class="d-flex gap-1 flex-wrap">
@@ -686,18 +807,23 @@ function renderizarTablaOrdenes() {
             </button>
             ${esConfirmable ? `<button class="btn btn-sm btn-outline-success" onclick="abrirModalConfirmarOrden(${orden.id})" title="Confirmar"><i class="bi bi-check-lg"></i></button>` : ''}
             ${esEnviable    ? `<button class="btn btn-sm btn-outline-primary" onclick="abrirModalEnviarOrden(${orden.id})"    title="Marcar enviada"><i class="bi bi-truck"></i></button>` : ''}
-            ${esEntregable  ? `<button class="btn btn-sm btn-outline-success" onclick="abrirModalEntregarOrden(${orden.id})"  title="Marcar entregada"><i class="bi bi-check2-all"></i></button>` : ''}
+            ${esCompletable ? `<button class="btn btn-sm btn-outline-dark" onclick="abrirModalCompletarOrden(${orden.id})" title="Completar después de la recepción"><i class="bi bi-archive"></i></button>` : ''}
+            ${esSeguimientoEditable ? `<button class="btn btn-sm btn-outline-info" onclick="abrirModalSeguimientoOrden(${orden.id})" title="Actualizar seguimiento"><i class="bi bi-signpost-2"></i></button>` : ''}
             ${esCancelable  ? `<button class="btn btn-sm btn-outline-danger"  onclick="confirmarCancelarOrden(${orden.id})"   title="Cancelar"><i class="bi bi-x-lg"></i></button>` : ''}
             <button class="btn btn-sm btn-outline-secondary" onclick="descargarFacturaAdmin(${orden.id})" title="Descargar Factura PDF"><i class="bi bi-file-earmark-pdf"></i></button>
+            ${esEliminable ? `<button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarOrdenDefinitiva(${orden.id})" title="Eliminar definitivamente"><i class="bi bi-trash3"></i></button>` : ''}
           </div>
         </td>
       </tr>`;
   }).join('');
 }
 
-function verDetalleOrden(ordenId) {
-  const orden = todasOrdenes.find(o => o.id === ordenId);
-  if (!orden) return;
+async function verDetalleOrden(ordenId) {
+  const orden = await apiFetch(`/ordenes/${ordenId}`);
+  if (!orden || orden.error) {
+    mostrarToast(orden?.error || 'No se pudo cargar la orden', 'error');
+    return;
+  }
 
   const productos = Array.isArray(orden.productos) ? orden.productos : [];
   document.getElementById('orderDetailTitle').textContent   = `Orden #${orden.id}`;
@@ -711,6 +837,13 @@ function verDetalleOrden(ordenId) {
     ? (orden.direccionPerfil + (orden.ciudad ? ', ' + orden.ciudad : ''))
     : null;
   document.getElementById('orderDetailAddress').textContent = dirPerfil || orden.direccionEnvio || 'Sin dirección';
+  document.getElementById('orderDetailTracking').textContent = orden.numeroSeguimiento || 'Aún no disponible';
+  const pagoDetalle = document.getElementById('orderDetailPayment');
+  if (pagoDetalle) {
+    const estadoPago = orden.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente';
+    const metodoPago = orden.metodoPago === 'paypal' ? 'PayPal' : 'Contra entrega';
+    pagoDetalle.textContent = `${estadoPago} (${metodoPago})`;
+  }
 
   const tbody = document.getElementById('orderDetailProductsBody');
   tbody.innerHTML = productos.length
@@ -728,6 +861,13 @@ function verDetalleOrden(ordenId) {
     : '<tr><td colspan="5" class="text-muted text-center py-3">Sin productos</td></tr>';
 
   document.getElementById('orderDetailTotal').textContent = `Bs. ${Number(orden.total || 0).toFixed(2)}`;
+  document.getElementById('orderDetailHistory').innerHTML = (orden.historial || []).map(item => `
+    <div class="order-history-item">
+      <strong>${escapeHtml(item.estadoNuevo || '')}</strong>
+      <small>${new Date(item.fechaCreacion).toLocaleString('es-ES')} · ${escapeHtml(item.actorNombre || item.actorRol || 'Sistema')}</small>
+      ${item.nota ? `<span>${escapeHtml(item.nota)}</span>` : ''}
+    </div>
+  `).join('') || '<p class="text-muted small mb-0">Sin historial disponible.</p>';
   bootstrap.Modal.getOrCreateInstance(document.getElementById('orderDetailModal')).show();
 }
 
@@ -764,11 +904,26 @@ function confirmarCancelarOrden(ordenId) {
   );
 }
 
-async function cambiarEstadoOrden(ordenId, estado) {
+function confirmarEliminarOrdenDefinitiva(ordenId) {
+  confirmar(`¿Eliminar definitivamente la orden #${ordenId}? Esta acción borra la orden, su historial, notificaciones y factura PDF.`, async () => {
+    try {
+      const result = await apiFetch(`/ordenes/admin/${ordenId}`, { method: 'DELETE' });
+      if (result.error) { mostrarToast(result.error, 'error'); return; }
+      mostrarToast(result.mensaje || 'Orden eliminada definitivamente');
+      await cargarOrdenes();
+      await cargarEstadisticas();
+      await cargarBaseDatos();
+    } catch (error) {
+      mostrarToast('Error al eliminar la orden', 'error');
+    }
+  });
+}
+
+async function cambiarEstadoOrden(ordenId, estado, datosAdicionales = {}) {
   try {
     const result = await apiFetch(`/ordenes/${ordenId}/estado`, {
       method: 'PUT',
-      body: JSON.stringify({ estado })
+      body: JSON.stringify({ estado, ...datosAdicionales })
     });
     if (result.error) { mostrarToast(result.error, 'error'); return; }
     mostrarToast(`Orden #${ordenId} → ${estado}`);
@@ -777,6 +932,23 @@ async function cambiarEstadoOrden(ordenId, estado) {
   } catch (e) {
     mostrarToast('Error al actualizar estado de la orden', 'error');
     console.error(e);
+  }
+}
+
+async function actualizarSeguimientoOrden(ordenId, numeroSeguimiento) {
+  try {
+    const result = await apiFetch(`/ordenes/${ordenId}/seguimiento`, {
+      method: 'PUT',
+      body: JSON.stringify({ numeroSeguimiento })
+    });
+    if (result.error) {
+      mostrarToast(result.error, 'error');
+      return;
+    }
+    mostrarToast(`Seguimiento de la orden #${ordenId} actualizado`);
+    await cargarOrdenes();
+  } catch (error) {
+    mostrarToast('Error al actualizar el seguimiento', 'error');
   }
 }
 
@@ -806,7 +978,7 @@ async function cargarUsuarios() {
         <td><strong>${escapeHtml(u.nombre)}</strong></td>
         <td>${escapeHtml(u.email)}</td>
         <td><span class="badge ${u.rol === 'admin' ? 'bg-danger' : 'bg-primary'}">${u.rol}</span></td>
-        <td><span class="badge ${u.activo !== false ? 'bg-success' : 'bg-secondary'}">${u.activo !== false ? 'Activo' : 'Inactivo'}</span></td>
+        <td><span class="badge ${esActivo(u.activo) ? 'bg-success' : 'bg-secondary'}">${esActivo(u.activo) ? 'Activo' : 'Inactivo'}</span></td>
         <td>
           <button class="btn btn-sm btn-outline-danger"
             onclick="confirmarEliminarUsuario(${u.id}, '${escapeHtml(u.nombre)}')"
@@ -829,6 +1001,7 @@ function confirmarEliminarUsuario(usuarioId, nombre) {
       if (result.error) { mostrarToast(result.error, 'error'); return; }
       mostrarToast('Usuario desactivado');
       await cargarUsuarios();
+      await cargarBaseDatos();
     } catch (e) {
       mostrarToast('Error al desactivar el usuario', 'error');
     }
@@ -838,22 +1011,57 @@ function confirmarEliminarUsuario(usuarioId, nombre) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // ESTADOS ADICIONALES — ENVIADO / ENTREGADO
 // ═══════════════════════════════════════════════════════════════════════════════
+function confirmarDesactivarUsuarioBase(usuarioId) {
+  const usuario = usuariosDB.find(u => u.id === usuarioId);
+  confirmar(`¿Desactivar al usuario "${usuario?.nombre || usuarioId}"?`, async () => {
+    try {
+      const result = await apiFetch(`/users/${usuarioId}/desactivar`, { method: 'PUT' });
+      if (result.error) { mostrarToast(result.error, 'error'); return; }
+      mostrarToast('Usuario desactivado');
+      await cargarUsuarios();
+      await cargarBaseDatos();
+    } catch (error) {
+      mostrarToast('Error al desactivar el usuario', 'error');
+    }
+  });
+}
+
+function confirmarEliminarUsuarioDefinitivo(usuarioId) {
+  const usuario = usuariosDB.find(u => u.id === usuarioId);
+  confirmar(`¿Eliminar definitivamente al usuario "${usuario?.nombre || usuarioId}"? Se borran carrito, favoritos, reseñas, notificaciones, órdenes y facturas asociadas.`, async () => {
+    try {
+      const result = await apiFetch(`/users/${usuarioId}/definitivo`, { method: 'DELETE' });
+      if (result.error) { mostrarToast(result.error, 'error'); return; }
+      mostrarToast(result.mensaje || 'Usuario eliminado definitivamente');
+      await cargarUsuarios();
+      await cargarBaseDatos();
+      await cargarResenasAdmin();
+    } catch (error) {
+      mostrarToast('Error al eliminar el usuario', 'error');
+    }
+  });
+}
+
 function abrirModalEnviarOrden(ordenId) {
   const orden = todasOrdenes.find(o => o.id === ordenId);
   if (!orden) return;
+  editandoSeguimiento = false;
   ordenPendienteEstado = { ordenId, estado: 'enviado' };
   document.getElementById('shippedOrderMessage').textContent =
     `¿Marcar la orden #${ordenId} de ${orden.nombre || 'cliente'} como enviada?`;
+  document.getElementById('shippedOrderTracking').value = orden.numeroSeguimiento || '';
   bootstrap.Modal.getOrCreateInstance(document.getElementById('shippedOrderModal')).show();
 }
 
-function abrirModalEntregarOrden(ordenId) {
+function abrirModalSeguimientoOrden(ordenId) {
   const orden = todasOrdenes.find(o => o.id === ordenId);
   if (!orden) return;
-  ordenPendienteEstado = { ordenId, estado: 'entregado' };
-  document.getElementById('deliveredOrderMessage').textContent =
-    `¿Marcar la orden #${ordenId} de ${orden.nombre || 'cliente'} como entregada?`;
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('deliveredOrderModal')).show();
+  editandoSeguimiento = true;
+  ordenPendienteEstado = { ordenId, estado: orden.estado };
+  document.getElementById('shippedOrderMessage').textContent =
+    `Actualizar la referencia de seguimiento de la orden #${ordenId}.`;
+  document.getElementById('shippedOrderTracking').value = orden.numeroSeguimiento || '';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('shippedOrderModal')).show();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

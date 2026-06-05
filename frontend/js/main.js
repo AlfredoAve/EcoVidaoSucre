@@ -4,12 +4,9 @@ const esAdminHome = usuarioActualHome?.rol === 'admin';
 let favoritosIdsHome = new Set();
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // [NUEVO] Promise.all para cargar en paralelo
-  await Promise.all([
-    cargarFavoritosIdsHome(),
-    cargarCategorias(),
-    cargarProductosDestacados()
-  ]);
+  // Cargar favoritos primero para que las tarjetas se rendericen con el estado correcto.
+  await cargarFavoritosIdsHome();
+  await Promise.all([cargarCategorias(), cargarProductosDestacados()]);
   initHeroCarousel();
 });
 
@@ -93,22 +90,20 @@ async function cargarProductosDestacados() {
   if (!container) return;
 
   try {
-    const data = await APIService.obtenerProductos();
+    const data = await APIService.obtenerProductos(1, 100, '', '', true);
     // [NUEVO] Extraer productos si la respuesta es paginada
     const productos = data.productos ? data.productos : data;
 
     if (!productos || productos.length === 0) {
-      container.innerHTML = '<div class="col-12 text-center text-muted">No hay productos disponibles</div>';
+      container.innerHTML = '<div class="col-12 text-center text-muted">No hay productos destacados por ahora</div>';
       return;
     }
 
-    // Mostrar solo 6 productos destacados
-    const destacados = productos.slice(0, 6);
-
     let html = '';
-    destacados.forEach(prod => {
+    productos.forEach(prod => {
       const enStockH = prod.stock > 0;
       const esFavorito = favoritosIdsHome.has(prod.id);
+      const ratingHtml = renderProductRating(prod.promedioResenas, prod.totalResenas);
       html += `
         <div class="col-12 col-md-4 col-lg-3">
           <div class="card h-100 border-0 eco-card">
@@ -127,6 +122,7 @@ async function cargarProductosDestacados() {
             <div class="card-body d-flex flex-column eco-card-body">
               <span class="eco-cat-label">${escapeHtml(prod.categoriaNombre || 'Natural')}</span>
               <h6 class="card-title fw-bold mb-1 eco-card-title">${escapeHtml(prod.nombre)}</h6>
+              ${ratingHtml}
               <div class="d-flex align-items-center justify-content-between mt-1 mb-3">
                 <span class="prod-precio fw-bold eco-precio">Bs ${prod.precio.toFixed(2)}</span>
                 <span class="badge-stock ${enStockH ? 'stock-ok' : 'stock-no'}">${enStockH ? 'En stock' : 'Sin stock'}</span>

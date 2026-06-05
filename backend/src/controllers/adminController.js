@@ -11,7 +11,52 @@ const router = express.Router();
 router.use(authMiddleware);
 router.use(adminMiddleware);
 
-const uploadDir = path.join(__dirname, '..', '..', '..', 'frontend', 'images');
+function normalizarDatosProducto(datos) {
+  const normalizados = { ...datos };
+
+  if (normalizados.precio !== undefined) normalizados.precio = Number(normalizados.precio);
+  if (normalizados.stock !== undefined) normalizados.stock = Number(normalizados.stock);
+  if (normalizados.categoriaId !== undefined) normalizados.categoriaId = Number(normalizados.categoriaId);
+  if (normalizados.destacado !== undefined) {
+    normalizados.destacado = [true, 1, '1', 'true'].includes(normalizados.destacado) ? 1 : 0;
+  }
+  if (normalizados.beneficios !== undefined) {
+    normalizados.beneficios = normalizarBeneficios(normalizados.beneficios);
+  }
+
+  return normalizados;
+}
+
+function normalizarBeneficios(valor) {
+  const items = Array.isArray(valor) ? valor : String(valor || '').split(/\r?\n/);
+  return items.map(item => String(item).trim()).filter(Boolean);
+}
+
+function errorDatosProducto(datos, requiereTodos = false) {
+  if (requiereTodos && (!datos.nombre || datos.precio === undefined || datos.stock === undefined || !datos.categoriaId)) {
+    return 'Datos incompletos';
+  }
+  if (datos.precio !== undefined && (!Number.isFinite(datos.precio) || datos.precio <= 0)) {
+    return 'Precio inválido';
+  }
+  if (datos.stock !== undefined && (!Number.isInteger(datos.stock) || datos.stock < 0)) {
+    return 'Stock inválido';
+  }
+  if (datos.categoriaId !== undefined && (!Number.isInteger(datos.categoriaId) || datos.categoriaId < 1)) {
+    return 'Categoría inválida';
+  }
+  if (datos.beneficios !== undefined) {
+    if (datos.beneficios.length > 5) {
+      return 'Puedes agregar como máximo 5 beneficios';
+    }
+    if (datos.beneficios.some(beneficio => beneficio.length > 80)) {
+      return 'Cada beneficio puede tener como máximo 80 caracteres';
+    }
+  }
+  return null;
+}
+
+const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -49,7 +94,7 @@ router.post('/upload', (req, res) => {
       return res.status(400).json({ error: 'Archivo requerido' });
     }
 
-    res.json({ exito: true, url: `/frontend/images/${req.file.filename}` });
+    res.json({ exito: true, url: `/uploads/${req.file.filename}` });
   });
 });
 
@@ -66,13 +111,15 @@ router.get('/productos', async (req, res) => {
 // POST /api/admin/productos - Crear producto
 router.post('/productos', async (req, res) => {
   try {
-    const { nombre, descripcion, precio, stock, categoriaId, imagen } = req.body;
+    const datos = normalizarDatosProducto(req.body);
+    const { nombre, descripcion, precio, stock, categoriaId, imagen, destacado = 0, beneficios = [] } = datos;
+    const error = errorDatosProducto(datos, true);
 
-    if (!nombre || !precio || !stock || !categoriaId) {
-      return res.status(400).json({ error: 'Datos incompletos' });
+    if (error) {
+      return res.status(400).json({ error });
     }
 
-    const producto = new Producto(nombre, descripcion, precio, stock, categoriaId, imagen);
+    const producto = new Producto(nombre, descripcion, precio, stock, categoriaId, imagen, destacado, beneficios);
     const productoId = await ProductosRepository.crearProducto(producto);
 
     res.json({ exito: true, id: productoId });
@@ -85,15 +132,25 @@ router.post('/productos', async (req, res) => {
 router.put('/productos/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, precio, stock, categoriaId, imagen, activo } = req.body;
+    const { nombre, descripcion, precio, stock, categoriaId, imagen, activo, destacado, beneficios } = req.body;
 
-    const datos = { nombre, descripcion, precio, stock, categoriaId, imagen, activo };
+    const datos = normalizarDatosProducto({ nombre, descripcion, precio, stock, categoriaId, imagen, activo, destacado, beneficios });
     Object.keys(datos).forEach((k) => {
       if (datos[k] === undefined) delete datos[k];
     });
 
     if (!Object.keys(datos).length) {
       return res.status(400).json({ error: 'Datos incompletos' });
+    }
+
+    const error = errorDatosProducto(datos);
+    if (error) {
+      return res.status(400).json({ error });
+    }
+
+    if (datos.beneficios !== undefined) {
+      datos.beneficiosJSON = JSON.stringify(datos.beneficios);
+      delete datos.beneficios;
     }
 
     const actualizado = await ProductosRepository.actualizarProducto(id, datos);
@@ -103,6 +160,35 @@ router.put('/productos/:id', async (req, res) => {
     }
 
     res.json({ exito: true, mensaje: 'Producto actualizado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/admin/productos/:id/definitivo - Eliminar producto de la base de datos
+router.delete('/productos/:id/definitivo', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const producto = await ProductosRepository.obtenerPorIdAdmin(id);
+
+    if (!producto) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    const eliminado = await ProductosRepository.eliminarDefinitivamente(id);
+    if (!eliminado) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    if (producto.imagen && producto.imagen.includes('/uploads/')) {
+      const uploadsDir = path.resolve(__dirname, '../../uploads');
+      const imagenPath = path.resolve(uploadsDir, path.basename(producto.imagen));
+      if (imagenPath.startsWith(uploadsDir) && fs.existsSync(imagenPath)) {
+        fs.unlinkSync(imagenPath);
+      }
+    }
+
+    res.json({ exito: true, mensaje: 'Producto eliminado definitivamente' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

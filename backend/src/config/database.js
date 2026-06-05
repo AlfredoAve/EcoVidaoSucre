@@ -5,6 +5,10 @@ const fs = require('fs');
 let db = null;
 
 function resolveDatabasePath() {
+  if (process.env.DATABASE_PATH) {
+    return path.resolve(process.env.DATABASE_PATH);
+  }
+
   const primaryPath = path.join(__dirname, '..', '..', 'database.db');
   const legacyPath = path.join(__dirname, '..', 'database.db');
 
@@ -79,6 +83,8 @@ async function createTables() {
           categoriaId INTEGER NOT NULL,
           imagen TEXT,
           activo BOOLEAN DEFAULT 1,
+          destacado BOOLEAN DEFAULT 0,
+          beneficiosJSON TEXT DEFAULT '[]',
           fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY(categoriaId) REFERENCES categorias(id)
         )
@@ -106,12 +112,33 @@ async function createTables() {
           productosJSON JSON NOT NULL,
           total REAL NOT NULL,
           estado TEXT DEFAULT 'pendiente',
+          estadoPago TEXT DEFAULT 'pendiente',
           direccionEnvio TEXT NOT NULL,
           metodoPago TEXT DEFAULT 'mercadopago',
+          fechaPago DATETIME,
           numeroSeguimiento TEXT,
           fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+          fechaConfirmada DATETIME,
+          fechaEnviada DATETIME,
+          fechaEntregaReportada DATETIME,
+          fechaEntregada DATETIME,
           fechaCompletada DATETIME,
           FOREIGN KEY(usuarioId) REFERENCES usuarios(id)
+        )
+      `);
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS orden_historial (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ordenId INTEGER NOT NULL,
+          estadoAnterior TEXT,
+          estadoNuevo TEXT NOT NULL,
+          actorUsuarioId INTEGER,
+          actorRol TEXT DEFAULT 'sistema',
+          nota TEXT,
+          fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY(ordenId) REFERENCES ordenes(id) ON DELETE CASCADE,
+          FOREIGN KEY(actorUsuarioId) REFERENCES usuarios(id)
         )
       `);
 
@@ -147,11 +174,14 @@ async function createTables() {
         CREATE TABLE IF NOT EXISTS notificaciones (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           usuarioId INTEGER NOT NULL,
+          ordenId INTEGER,
           tipo TEXT NOT NULL,
           mensaje TEXT NOT NULL,
+          enlace TEXT,
           leida BOOLEAN DEFAULT 0,
           fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY(usuarioId) REFERENCES usuarios(id)
+          FOREIGN KEY(usuarioId) REFERENCES usuarios(id),
+          FOREIGN KEY(ordenId) REFERENCES ordenes(id) ON DELETE CASCADE
         )
       `);
 
@@ -179,6 +209,8 @@ async function createTables() {
         db.run('CREATE INDEX IF NOT EXISTS idx_carrito_usuario ON carrito(usuarioId)');
         db.run('CREATE INDEX IF NOT EXISTS idx_resenas_producto ON resenas(productoId)');
         db.run('CREATE INDEX IF NOT EXISTS idx_favoritos_usuario ON favoritos(usuarioId)');
+        db.run('CREATE INDEX IF NOT EXISTS idx_orden_historial_orden ON orden_historial(ordenId)');
+        db.run('CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario ON notificaciones(usuarioId, leida)');
 
         // Migraciones ligeras para BD antiguas
         db.all('PRAGMA table_info(categorias)', (colErr, columns) => {
@@ -190,25 +222,159 @@ async function createTables() {
 
           const existeActiva = (columns || []).some((c) => c.name === 'activa');
 
-          const addPaypalMigration = () => {
+          const finishMigrations = () => {
+            db.run('CREATE INDEX IF NOT EXISTS idx_productos_destacado ON productos(destacado)');
+            console.log('✅ Tablas creadas/verificadas');
+            resolve();
+          };
+
+          const addOrderMigrations = () => {
             db.all('PRAGMA table_info(ordenes)', (oErr, oColumns) => {
               if (oErr) { reject(oErr); return; }
-              const existePaypal = (oColumns || []).some((c) => c.name === 'paypalOrderId');
-              if (existePaypal) {
-                console.log('✅ Tablas creadas/verificadas');
-                resolve();
+              const columnas = new Set((oColumns || []).map(c => c.name));
+              const faltantes = [
+                ['paypalOrderId', 'TEXT'],
+                ['estadoPago', "TEXT DEFAULT 'pendiente'"],
+                ['fechaPago', 'DATETIME'],
+                ['fechaConfirmada', 'DATETIME'],
+                ['fechaEnviada', 'DATETIME'],
+                ['fechaEntregaReportada', 'DATETIME'],
+                ['fechaEntregada', 'DATETIME']
+              ].filter(([nombre]) => !columnas.has(nombre));
+
+              const agregarSiguiente = () => {
+                const siguiente = faltantes.shift();
+                if (!siguiente) {
+                  db.run(`
+                    UPDATE ordenes
+                    SET
+                      estado = CASE
+                        WHEN estado = 'entrega_reportada' THEN 'enviado'
+                        ELSE estado
+                      END,
+                      fechaConfirmada = CASE
+                        WHEN estado IN ('confirmada', 'enviado', 'entrega_reportada', 'entregado', 'completada')
+                        THEN COALESCE(fechaConfirmada, fechaCreacion)
+                        ELSE fechaConfirmada
+                      END,
+                      fechaEnviada = CASE
+                        WHEN estado IN ('enviado', 'entrega_reportada', 'entregado', 'completada')
+                        THEN COALESCE(fechaEnviada, fechaCreacion)
+                        ELSE fechaEnviada
+                      END,
+                      fechaEntregaReportada = CASE
+                        WHEN estado IN ('entrega_reportada', 'entregado', 'completada')
+                        THEN COALESCE(fechaEntregaReportada, fechaCreacion)
+                        ELSE fechaEntregaReportada
+                      END,
+                      fechaEntregada = CASE
+                        WHEN estado IN ('entregado', 'completada')
+                        THEN COALESCE(fechaEntregada, fechaCreacion)
+                        ELSE fechaEntregada
+                      END,
+                      estadoPago = CASE
+                        WHEN metodoPago = 'paypal' AND estado != 'pago_pendiente' THEN 'pagado'
+                        WHEN metodoPago != 'paypal' AND estado IN ('entregado', 'completada') THEN 'pagado'
+                        ELSE COALESCE(estadoPago, 'pendiente')
+                      END,
+                      fechaPago = CASE
+                        WHEN (
+                          (metodoPago = 'paypal' AND estado != 'pago_pendiente')
+                          OR (metodoPago != 'paypal' AND estado IN ('entregado', 'completada'))
+                        )
+                        THEN COALESCE(fechaPago, fechaEntregada, fechaConfirmada, fechaCreacion)
+                        ELSE fechaPago
+                      END
+                  `, (updateErr) => {
+                    if (updateErr) { reject(updateErr); return; }
+                    db.all('PRAGMA table_info(notificaciones)', (nErr, nColumns) => {
+                    if (nErr) { reject(nErr); return; }
+                    const nCols = new Set((nColumns || []).map(c => c.name));
+                    const nFaltantes = [
+                      ['ordenId', 'INTEGER'],
+                      ['enlace', 'TEXT']
+                    ].filter(([nombre]) => !nCols.has(nombre));
+
+                    const agregarNotificacion = () => {
+                      const columna = nFaltantes.shift();
+                      if (!columna) {
+                        db.run(`
+                          INSERT INTO orden_historial (ordenId, estadoAnterior, estadoNuevo, actorRol, nota, fechaCreacion)
+                          SELECT o.id, NULL, o.estado, 'sistema', 'Estado inicial migrado', o.fechaCreacion
+                          FROM ordenes o
+                          WHERE o.estado != 'pago_pendiente'
+                            AND NOT EXISTS (
+                              SELECT 1 FROM orden_historial h WHERE h.ordenId = o.id
+                            )
+                        `, finishMigrations);
+                        return;
+                      }
+                      db.run(`ALTER TABLE notificaciones ADD COLUMN ${columna[0]} ${columna[1]}`, (altErr) => {
+                        if (altErr) { reject(altErr); return; }
+                        agregarNotificacion();
+                      });
+                    };
+                    agregarNotificacion();
+                  });
+                  });
+                  return;
+                }
+                db.run(`ALTER TABLE ordenes ADD COLUMN ${siguiente[0]} ${siguiente[1]}`, (altErr) => {
+                  if (altErr) { reject(altErr); return; }
+                  agregarSiguiente();
+                });
+              };
+              agregarSiguiente();
+            });
+          };
+
+          const addBeneficiosMigration = () => {
+            db.all('PRAGMA table_info(productos)', (pErr, pColumns) => {
+              if (pErr) { reject(pErr); return; }
+              const existeBeneficios = (pColumns || []).some((c) => c.name === 'beneficiosJSON');
+              if (existeBeneficios) {
+                addOrderMigrations();
                 return;
               }
-              db.run('ALTER TABLE ordenes ADD COLUMN paypalOrderId TEXT', (altErr2) => {
-                if (altErr2) { reject(altErr2); return; }
-                console.log('✅ Tablas creadas/verificadas');
-                resolve();
+
+              db.run("ALTER TABLE productos ADD COLUMN beneficiosJSON TEXT DEFAULT '[]'", (altErr) => {
+                if (altErr) { reject(altErr); return; }
+                addOrderMigrations();
+              });
+            });
+          };
+
+          const addDestacadoMigration = () => {
+            db.all('PRAGMA table_info(productos)', (pErr, pColumns) => {
+              if (pErr) { reject(pErr); return; }
+              const existeDestacado = (pColumns || []).some((c) => c.name === 'destacado');
+              if (existeDestacado) {
+                addBeneficiosMigration();
+                return;
+              }
+
+              db.run('ALTER TABLE productos ADD COLUMN destacado BOOLEAN DEFAULT 0', (altErr) => {
+                if (altErr) { reject(altErr); return; }
+                // Conservar como destacados los productos que ya se mostraban en el inicio.
+                db.run(`
+                  UPDATE productos
+                  SET destacado = 1
+                  WHERE id IN (
+                    SELECT id FROM productos
+                    WHERE activo = 1
+                    ORDER BY nombre
+                    LIMIT 6
+                  )
+                `, (updateErr) => {
+                  if (updateErr) { reject(updateErr); return; }
+                  addBeneficiosMigration();
+                });
               });
             });
           };
 
           if (existeActiva) {
-            addPaypalMigration();
+            addDestacadoMigration();
             return;
           }
 
@@ -218,7 +384,7 @@ async function createTables() {
               reject(altErr);
               return;
             }
-            addPaypalMigration();
+            addDestacadoMigration();
           });
         });
       });

@@ -2,6 +2,9 @@ const mercadopago = require('mercadopago');
 const OrdenesRepository = require('../repositories/ordenesRepository');
 const CarritoRepository = require('../repositories/carritoRepository');
 const ProductosRepository = require('../repositories/productosRepository');
+const UserRepository = require('../repositories/userRepository');
+const NotificacionesRepository = require('../repositories/notificacionesRepository');
+const { crearErrorPerfilIncompleto } = require('../utils/perfilValidation');
 
 // Configurar MercadoPago (será configurado con token en env)
 const MERCADOPAGO_TOKEN = process.env.MERCADOPAGO_TOKEN || null;
@@ -16,6 +19,10 @@ class CheckoutService {
   }
 
   static async crearOrdenDesdeCarrito(usuarioId, direccionEnvio) {
+    const usuario = await UserRepository.obtenerPorId(usuarioId);
+    const errorPerfil = crearErrorPerfilIncompleto(usuario);
+    if (errorPerfil) throw errorPerfil;
+
     // Obtener carrito del usuario
     const items = await CarritoRepository.obtenerCarritoUsuario(usuarioId);
 
@@ -46,10 +53,38 @@ class CheckoutService {
     const orden = new Orden(usuarioId, productos, total, direccionEnvio);
     const ordenId = await OrdenesRepository.crearOrden(orden);
 
-    // Descontar stock
-    for (const item of items) {
-      await ProductosRepository.actualizarStock(item.productoId, -item.cantidad);
+    // Descontar stock de forma condicional para evitar cantidades negativas.
+    const descontados = [];
+    try {
+      for (const item of items) {
+        const descontado = await ProductosRepository.descontarStock(item.productoId, item.cantidad);
+        if (!descontado) {
+          throw new Error(`Stock insuficiente para ${item.nombre}`);
+        }
+        descontados.push(item);
+      }
+    } catch (error) {
+      for (const item of descontados) {
+        await ProductosRepository.actualizarStock(item.productoId, item.cantidad);
+      }
+      await OrdenesRepository.actualizarEstado(ordenId, 'cancelada');
+      throw error;
     }
+
+    await OrdenesRepository.registrarHistorial({
+      ordenId,
+      estadoNuevo: 'pendiente',
+      actorUsuarioId: usuarioId,
+      actorRol: 'cliente',
+      nota: 'Orden creada por el cliente'
+    });
+    await NotificacionesRepository.crear({
+      usuarioId,
+      ordenId,
+      tipo: 'orden_pendiente',
+      mensaje: `Orden #${ordenId}: recibimos tu pedido y está pendiente de confirmación.`,
+      enlace: 'profile.html?tab=ordenes'
+    });
 
     // Vaciar carrito
     await CarritoRepository.vaciarCarrito(usuarioId);
@@ -113,7 +148,6 @@ class CheckoutService {
       const ordenData = await this.crearOrdenDesdeCarrito(usuarioId, direccionEnvio);
       const orden = await OrdenesRepository.obtenerPorId(ordenData.ordenId);
       // Obtener usuario con todos los datos del perfil
-      const UserRepository = require('../repositories/userRepository');
       const usuarioRaw = await UserRepository.obtenerPorId(orden.usuarioId);
       const usuario = {
         nombre:    usuarioRaw.nombre    || 'Cliente General',

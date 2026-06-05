@@ -47,6 +47,8 @@ function createTables() {
           categoriaId INTEGER NOT NULL,
           imagen TEXT,
           activo BOOLEAN DEFAULT 1,
+          destacado BOOLEAN DEFAULT 0,
+          beneficiosJSON TEXT DEFAULT '[]',
           fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY(categoriaId) REFERENCES categorias(id)
         )
@@ -137,4 +139,3 @@ createTables().then(() => {
   console.error('❌ Error:', err);
   process.exit(1);
 });
-

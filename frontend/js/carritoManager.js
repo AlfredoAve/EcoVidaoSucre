@@ -20,14 +20,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function cargarCarrito() {
   try {
     const carrito = await APIService.obtenerCarrito();
-    actualizarTablaCarrito(carrito);
+    await actualizarTablaCarrito(carrito);
   } catch (error) {
     console.error('Error cargando carrito:', error);
     showNotif('Error al cargar el carrito');
   }
 }
 
-function actualizarTablaCarrito(carrito) {
+async function actualizarTablaCarrito(carrito) {
   const tabla = document.getElementById('cartTableBody');
   const emptyCart = document.getElementById('emptyCart');
   const cartItems = document.getElementById('cartItems');
@@ -37,6 +37,10 @@ function actualizarTablaCarrito(carrito) {
     cartItems.style.display = 'none';
     const seccionPago = document.getElementById('seccion-pago');
     if (seccionPago) seccionPago.style.display = 'none';
+    // Resetear PayPal para que se pueda reinicializar si vuelven a agregar productos
+    if (typeof paypalInicializado !== 'undefined') paypalInicializado = false;
+    const container = document.getElementById('paypal-button-container');
+    if (container) container.innerHTML = '';
     return;
   }
 
@@ -45,6 +49,9 @@ function actualizarTablaCarrito(carrito) {
 
   let html = '';
   carrito.items.forEach(item => {
+    const precioUnitario = Number(item.precioUnitario || 0);
+    const subtotal = Number(item.subtotal || 0);
+    const stock = Number(item.stock || 0);
     html += `
       <tr>
         <td>
@@ -55,13 +62,13 @@ function actualizarTablaCarrito(carrito) {
             </div>
           </div>
         </td>
-        <td>Bs ${item.precioUnitario.toFixed(2)}</td>
+        <td>Bs ${precioUnitario.toFixed(2)}</td>
         <td>
           <input type="number" class="form-control form-control-sm" style="width:70px;"
-                 value="${item.cantidad}" min="1" max="${item.stock}"
+                 value="${item.cantidad}" min="1" max="${stock}"
                  onchange="actualizarCantidad(${item.productoId}, this.value)">
         </td>
-        <td>Bs ${item.subtotal.toFixed(2)}</td>
+        <td>Bs ${subtotal.toFixed(2)}</td>
         <td>
           <button class="btn btn-sm btn-danger" onclick="eliminarDelCarrito(${item.productoId})">
             <i class="bi bi-trash"></i>
@@ -77,22 +84,47 @@ function actualizarTablaCarrito(carrito) {
   const subtotalEl = document.getElementById('subtotal');
   const shippingEl = document.getElementById('shipping');
   const totalEl = document.getElementById('total');
-  if (subtotalEl) subtotalEl.textContent = `Bs ${carrito.total.toFixed(2)}`;
+  const total = Number(carrito.total || 0);
+  if (subtotalEl) subtotalEl.textContent = `Bs ${total.toFixed(2)}`;
   if (shippingEl) shippingEl.textContent = 'Bs 0.00';
-  if (totalEl) totalEl.textContent = `Bs ${carrito.total.toFixed(2)}`;
+  if (totalEl) totalEl.textContent = `Bs ${total.toFixed(2)}`;
 
   // Mostrar sección de pago y renderizar botón PayPal
   const seccionPago = document.getElementById('seccion-pago');
   if (seccionPago) {
     seccionPago.style.display = 'block';
     const totalPagoEl = document.getElementById('total-pago');
-    if (totalPagoEl) totalPagoEl.textContent = `Bs ${carrito.total.toFixed(2)}`;
+    if (totalPagoEl) totalPagoEl.textContent = `Bs ${total.toFixed(2)}`;
     // Ocultar mensajes previos al reinicializar
     const exitoso = document.getElementById('pago-exitoso');
     const error = document.getElementById('pago-error');
     if (exitoso) exitoso.style.display = 'none';
     if (error) error.style.display = 'none';
-    if (typeof initPayPal === 'function') initPayPal(carrito.total);
+
+    const avisoPerfil = document.getElementById('perfil-pago-incompleto');
+    const botonContraentrega = document.getElementById('btn-contraentrega');
+    const paypalContainer = document.getElementById('paypal-button-container');
+
+    try {
+      const validacionPerfil = await obtenerValidacionPerfilPago();
+      if (!validacionPerfil.completo) {
+        mostrarPerfilIncompleto(validacionPerfil);
+        if (paypalContainer) paypalContainer.innerHTML = '';
+        if (botonContraentrega) botonContraentrega.disabled = true;
+        paypalInicializado = false;
+        return;
+      }
+
+      if (avisoPerfil) avisoPerfil.style.display = 'none';
+      if (botonContraentrega) botonContraentrega.disabled = false;
+      if (typeof initPayPal === 'function') initPayPal(total);
+    } catch (perfilError) {
+      console.error('Error validando perfil para pago:', perfilError);
+      mostrarPerfilIncompleto({ camposFaltantes: [] });
+      if (paypalContainer) paypalContainer.innerHTML = '';
+      if (botonContraentrega) botonContraentrega.disabled = true;
+      paypalInicializado = false;
+    }
   }
 }
 
@@ -108,11 +140,17 @@ function configurarEventos() {
 }
 
 async function actualizarCantidad(productoId, nuevaCantidad) {
-  nuevaCantidad = parseInt(nuevaCantidad);
+  nuevaCantidad = Number(nuevaCantidad);
+
+  if (!Number.isInteger(nuevaCantidad) || nuevaCantidad < 1) {
+    showNotif('Ingresa una cantidad válida');
+    await cargarCarrito();
+    return;
+  }
 
   try {
     const producto = await APIService.obtenerProductoPorId(productoId);
-    const stockDisponible = producto.stock;
+    const stockDisponible = Number(producto.stock || 0);
 
     if (nuevaCantidad > stockDisponible) {
       nuevaCantidad = stockDisponible;
@@ -157,9 +195,25 @@ function irAlCheckout() {
 async function procesarPago(e) {
   e.preventDefault();
 
-  const direccion = document.getElementById('address').value;
-  const ciudad = document.getElementById('city').value;
-  const telefono = document.getElementById('phone').value;
+  let validacionPerfil;
+  try {
+    validacionPerfil = await obtenerValidacionPerfilPago();
+  } catch (error) {
+    console.error('Error validando perfil para pago:', error);
+    showNotif('No se pudo validar tu perfil. Intenta nuevamente.', 'error');
+    return;
+  }
+
+  if (!validacionPerfil.completo) {
+    ocultarModalDireccion();
+    mostrarPerfilIncompleto(validacionPerfil);
+    showNotif('Completa tu perfil antes de pagar', 'warning');
+    return;
+  }
+
+  const direccion = document.getElementById('address').value.trim();
+  const ciudad = document.getElementById('city').value.trim();
+  const telefono = document.getElementById('phone').value.trim();
 
   if (!direccion || !ciudad || !telefono) {
     showNotif('Por favor completa todos los campos');

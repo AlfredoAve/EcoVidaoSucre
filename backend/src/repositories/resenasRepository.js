@@ -50,6 +50,22 @@ class ResenasRepository {
     });
   }
 
+  static obtenerTodas() {
+    return new Promise((resolve, reject) => {
+      const db = getDB();
+      db.all(`
+        SELECT r.*, p.nombre as productoNombre, u.nombre as usuarioNombre
+        FROM resenas r
+        JOIN productos p ON r.productoId = p.id
+        JOIN usuarios u ON r.usuarioId = u.id
+        ORDER BY r.fechaCreacion DESC
+      `, [], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    });
+  }
+
   static obtenerPromedio(productoId) {
     return new Promise((resolve, reject) => {
       const db = getDB();

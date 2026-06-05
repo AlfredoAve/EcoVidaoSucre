@@ -8,6 +8,8 @@ let favoritosIdsCatalogo = new Set();
 let currentPage = 1;
 const LIMIT = 20;
 let totalPages = 1;
+const PRICE_MIN = 0;
+const PRICE_MAX = 1000;
 
 async function ensureBootstrap() {
   if (window.bootstrap?.Modal) return;
@@ -33,12 +35,9 @@ async function ensureBootstrap() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // [NUEVO] Promise.all para cargar en paralelo
-  await Promise.all([
-    cargarFavoritosIdsCatalogo(),
-    cargarProductos(),
-    cargarCategorias()
-  ]);
+  // Cargar favoritos primero para que las tarjetas se rendericen con el estado correcto.
+  await cargarFavoritosIdsCatalogo();
+  await Promise.all([cargarProductos(), cargarCategorias()]);
   configurarEventos();
   aplicarFiltroDesdeURL();
 });
@@ -87,8 +86,7 @@ async function cargarProductos(append = false) {
 
 // [NUEVO] Separar filtro de precio local
 function renderizarConFiltroPrecio() {
-  const minPrice = parseFloat(document.getElementById('minPrice')?.value || 0);
-  const maxPrice = parseFloat(document.getElementById('maxPrice')?.value || Infinity);
+  const { minPrice, maxPrice } = syncPriceRange();
   const productsList = document.getElementById('productsList');
   const noResultsMsg = document.getElementById('noResultsMsg');
 
@@ -135,13 +133,20 @@ async function cargarCategorias() {
   try {
     const categorias = await APIService.obtenerCategorias();
 
-    let html = '';
+    let html = `
+      <div class="form-check">
+        <input class="form-check-input categoria-filter" type="checkbox" value="" id="catTodas" checked>
+        <label class="form-check-label" for="catTodas">
+          Todas
+        </label>
+      </div>
+    `;
     categorias.forEach(cat => {
       html += `
         <div class="form-check">
           <input class="form-check-input categoria-filter" type="checkbox" value="${cat.id}" id="cat${cat.id}">
           <label class="form-check-label" for="cat${cat.id}">
-            ${cat.nombre} <span class="text-muted small">(${cat.productosCount || 0})</span>
+            ${escapeHtml(cat.nombre)}
           </label>
         </div>
       `;
@@ -157,9 +162,26 @@ function configurarEventos() {
   // Búsqueda
   document.getElementById('searchInput')?.addEventListener('input', aplicarFiltros);
 
+  // Slider de precio
+  document.getElementById('minPriceRange')?.addEventListener('input', () => syncPriceRange('min'));
+  document.getElementById('maxPriceRange')?.addEventListener('input', () => syncPriceRange('max'));
+  syncPriceRange();
+
   // Filtro de categoría
   document.querySelectorAll('.categoria-filter').forEach(el => {
-    el.addEventListener('change', aplicarFiltros);
+    el.addEventListener('change', () => {
+      if (el.checked) {
+        document.querySelectorAll('.categoria-filter').forEach(item => {
+          if (item !== el) item.checked = false;
+        });
+      }
+
+      const algunaSeleccionada = Array.from(document.querySelectorAll('.categoria-filter')).some(item => item.checked);
+      const todas = document.getElementById('catTodas');
+      if (!algunaSeleccionada && todas) todas.checked = true;
+
+      aplicarFiltros();
+    });
   });
 
   // Filtro de precio
@@ -231,6 +253,7 @@ function aplicarFiltroDesdeURL() {
   if (categoriaId) {
     const checkbox = document.getElementById(`cat${categoriaId}`);
     if (checkbox) {
+      document.querySelectorAll('.categoria-filter').forEach(el => el.checked = false);
       checkbox.checked = true;
       aplicarFiltros();
     }
@@ -239,12 +262,56 @@ function aplicarFiltroDesdeURL() {
 
 function limpiarFiltros() {
   document.getElementById('searchInput').value = '';
-  document.getElementById('minPrice').value = '';
-  document.getElementById('maxPrice').value = '';
+  const minRange = document.getElementById('minPriceRange');
+  const maxRange = document.getElementById('maxPriceRange');
+  if (minRange) minRange.value = PRICE_MIN;
+  if (maxRange) maxRange.value = PRICE_MAX;
+  syncPriceRange();
   document.querySelectorAll('.categoria-filter').forEach(el => el.checked = false);
+  const todas = document.getElementById('catTodas');
+  if (todas) todas.checked = true;
   
   currentPage = 1;
   cargarProductos(false);
+}
+
+function syncPriceRange(activeHandle = null) {
+  const minRange = document.getElementById('minPriceRange');
+  const maxRange = document.getElementById('maxPriceRange');
+  const minLabel = document.getElementById('priceMinLabel');
+  const maxLabel = document.getElementById('priceMaxLabel');
+  const fill = document.getElementById('priceRangeFill');
+
+  if (!minRange || !maxRange) {
+    return { minPrice: PRICE_MIN, maxPrice: PRICE_MAX };
+  }
+
+  let minPrice = Number(minRange.value || PRICE_MIN);
+  let maxPrice = Number(maxRange.value || PRICE_MAX);
+
+  if (minPrice > maxPrice) {
+    if (activeHandle === 'min') {
+      maxPrice = minPrice;
+    } else {
+      minPrice = maxPrice;
+    }
+  }
+
+  minRange.value = minPrice;
+  maxRange.value = maxPrice;
+
+  if (minLabel) minLabel.textContent = `Bs ${minPrice}`;
+  if (maxLabel) maxLabel.textContent = `Bs ${maxPrice}`;
+
+  if (fill) {
+    const span = PRICE_MAX - PRICE_MIN;
+    const left = ((minPrice - PRICE_MIN) / span) * 100;
+    const right = ((maxPrice - PRICE_MIN) / span) * 100;
+    fill.style.left = `${left}%`;
+    fill.style.width = `${Math.max(0, right - left)}%`;
+  }
+
+  return { minPrice, maxPrice };
 }
 
 function renderizarProductos(productos) {
@@ -254,6 +321,7 @@ function renderizarProductos(productos) {
   productos.forEach(prod => {
     const enStock = prod.stock > 0;
     const esFavorito = favoritosIdsCatalogo.has(prod.id);
+    const ratingHtml = renderProductRating(prod.promedioResenas, prod.totalResenas);
     html += `
       <div class="col-12 col-md-4 col-lg-3">
         <div class="card h-100 border-0 eco-card">
@@ -272,6 +340,7 @@ function renderizarProductos(productos) {
           <div class="card-body d-flex flex-column eco-card-body">
             <span class="eco-cat-label">${escapeHtml(prod.categoriaNombre || 'Natural')}</span>
             <h6 class="card-title fw-bold mb-1 eco-card-title">${escapeHtml(prod.nombre)}</h6>
+            ${ratingHtml}
             <div class="d-flex align-items-center justify-content-between mt-1 mb-3">
               <span class="prod-precio fw-bold eco-precio">Bs ${prod.precio.toFixed(2)}</span>
               <span class="badge-stock ${enStock ? 'stock-ok' : 'stock-no'}">${enStock ? 'En stock' : 'Sin stock'}</span>
@@ -308,6 +377,12 @@ async function abrirProducto(productoId) {
     const addBtn = document.getElementById('addToCartBtn');
 
     document.getElementById('productTitle').textContent = productoSeleccionado.nombre;
+    const categoriaProducto = productoSeleccionado.categoriaNombre || 'Producto natural';
+    document.getElementById('productCategory').textContent = categoriaProducto;
+    document.getElementById('productRatingSummary').innerHTML = renderProductRating(
+      productoSeleccionado.promedioResenas,
+      productoSeleccionado.totalResenas
+    );
     const imgEl = document.getElementById('productImage');
     imgEl.src = APIService.getImageUrl(productoSeleccionado.imagen);
     imgEl.onerror = function() { this.src = 'https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen'; this.onerror = null; };
@@ -317,12 +392,49 @@ async function abrirProducto(productoId) {
     document.getElementById('productQty').max = stock;
     document.getElementById('productQty').value = stock > 0 ? 1 : 0;
 
+    const beneficios = Array.isArray(productoSeleccionado.beneficios) ? productoSeleccionado.beneficios : [];
+    const benefitsSection = document.getElementById('productBenefitsSection');
+    const benefitsContainer = document.getElementById('productBenefits');
+    if (beneficios.length > 0) {
+      benefitsContainer.innerHTML = beneficios.map(beneficio => `
+        <div class="product-benefit-item">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <span>${escapeHtml(beneficio)}</span>
+        </div>
+      `).join('');
+      benefitsSection.style.display = 'block';
+    } else {
+      benefitsContainer.innerHTML = '';
+      benefitsSection.style.display = 'none';
+    }
+
     if (addBtn) {
       addBtn.disabled = stock <= 0;
     }
 
     // Cargar reseñas
     await cargarResenasProducto(productoId);
+
+    // Solo permitir reseñas a clientes que confirmaron la recepción del producto.
+    const btnShowReview  = document.getElementById('btnShowReviewForm');
+    const btnLoginReview = document.getElementById('btnLoginToReview');
+    const usuarioLocal = JSON.parse(localStorage.getItem('usuario') || 'null');
+    if (APIService.getToken() && usuarioLocal?.rol !== 'admin') {
+      const elegibilidad = await APIService.puedeResenarProducto(productoId);
+      if (btnShowReview)  { btnShowReview.style.display = elegibilidad.puedeResenar ? 'inline-block' : 'none'; }
+      if (btnLoginReview) { btnLoginReview.style.display = 'none'; }
+    } else if (APIService.getToken()) {
+      if (btnShowReview)  { btnShowReview.style.display = 'none'; }
+      if (btnLoginReview) { btnLoginReview.style.display = 'none'; }
+    } else {
+      if (btnShowReview)  { btnShowReview.style.display  = 'none'; }
+      if (btnLoginReview) { btnLoginReview.style.display = 'inline-block'; }
+    }
+    // Resetear formulario de reseña al abrir nuevo producto
+    const reviewContainer = document.getElementById('reviewFormContainer');
+    if (reviewContainer) reviewContainer.style.display = 'none';
+    const reviewComment = document.getElementById('reviewComment');
+    if (reviewComment) reviewComment.value = '';
 
     // Mostrar modal
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('productModal'));
@@ -381,9 +493,33 @@ async function cargarResenasProducto(productoId) {
   }
 }
 
+// Evento para mostrar el formulario de reseña
+document.getElementById('btnShowReviewForm')?.addEventListener('click', () => {
+  const container = document.getElementById('reviewFormContainer');
+  if (container) container.style.display = 'block';
+  const btn = document.getElementById('btnShowReviewForm');
+  if (btn) btn.style.display = 'none';
+});
+
+// Evento para cancelar el formulario de reseña
+document.getElementById('cancelReviewBtn')?.addEventListener('click', () => {
+  const container = document.getElementById('reviewFormContainer');
+  if (container) container.style.display = 'none';
+  const comment = document.getElementById('reviewComment');
+  if (comment) comment.value = '';
+  const btnShow = document.getElementById('btnShowReviewForm');
+  if (btnShow) btnShow.style.display = 'inline-block';
+  // Resetear estrellas
+  document.querySelectorAll('#starRatingContainer i').forEach(s => {
+    s.className = 'bi bi-star';
+  });
+  const submitBtn = document.getElementById('submitReviewBtn');
+  if (submitBtn) submitBtn.removeAttribute('data-calificacion');
+});
+
 // Evento para el botón de enviar reseña
 document.getElementById('submitReviewBtn')?.addEventListener('click', async (e) => {
-  const btn = e.target;
+  const btn = e.currentTarget;
   const calificacion = parseInt(btn.getAttribute('data-calificacion') || '0');
   const comentario = document.getElementById('reviewComment').value.trim();
 
@@ -405,6 +541,8 @@ document.getElementById('submitReviewBtn')?.addEventListener('click', async (e) 
     
     showNotif('¡Gracias por tu reseña!', 'success');
     document.getElementById('cancelReviewBtn').click();
+    const btnShow = document.getElementById('btnShowReviewForm');
+    if (btnShow) btnShow.style.display = 'inline-block';
     cargarResenasProducto(productoSeleccionado.id);
   } catch (e) {
     showNotif(e.message || 'Error al enviar la reseña', 'error');

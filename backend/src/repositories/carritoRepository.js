@@ -32,7 +32,8 @@ class CarritoRepository {
       const db = getDB();
       db.all(`
         SELECT c.usuarioId, c.productoId, c.cantidad, c.precioUnitario,
-               p.nombre, p.imagen, (c.cantidad * c.precioUnitario) as subtotal
+               p.nombre, p.imagen, p.stock,
+               (c.cantidad * c.precioUnitario) as subtotal
         FROM carrito c
         JOIN productos p ON c.productoId = p.id
         WHERE c.usuarioId = ?
@@ -80,6 +81,27 @@ class CarritoRepository {
         if (err) reject(err);
         else resolve(this.changes > 0);
       });
+    });
+  }
+
+  static eliminarProductos(usuarioId, productoIds) {
+    return new Promise((resolve, reject) => {
+      const ids = [...new Set((productoIds || []).map(Number).filter(Number.isInteger))];
+      if (!ids.length) {
+        resolve(false);
+        return;
+      }
+
+      const db = getDB();
+      const placeholders = ids.map(() => '?').join(', ');
+      db.run(
+        `DELETE FROM carrito WHERE usuarioId = ? AND productoId IN (${placeholders})`,
+        [usuarioId, ...ids],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes > 0);
+        }
+      );
     });
   }
 

@@ -7,8 +7,13 @@ fetch('_navbar.html')
     // Si header.js aún no cargó (fetch muy rápido), esperamos DOMContentLoaded
     function initAll() {
       if (typeof navbarBurgerInit === 'function')       navbarBurgerInit();
-      if (typeof actualizarNavegacion === 'function')   actualizarNavegacion();
+      if (typeof actualizarNavegacionCuenta === 'function') {
+        actualizarNavegacionCuenta();
+      } else if (typeof actualizarNavegacion === 'function') {
+        actualizarNavegacion();
+      }
       if (typeof actualizarCarritoBadge === 'function') actualizarCarritoBadge();
+      if (typeof actualizarNotificacionesBadge === 'function') actualizarNotificacionesBadge();
       cargarLucide();
     }
 
@@ -37,4 +42,3 @@ function cargarLucide() {
   };
   document.body.appendChild(script);
 }
-

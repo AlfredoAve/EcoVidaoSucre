@@ -30,16 +30,19 @@ async function mostrarDetallesOrden() {
 
     document.getElementById('ordenId').textContent = `#${idMostrar}`;
     document.getElementById('ordenTotal').textContent = `Bs ${Number(totalMostrar).toFixed(2)}`;
+    document.getElementById('ordenEstado').textContent = orden.estado || 'pendiente';
+    document.getElementById('ordenDireccion').textContent = orden.direccionEnvio || 'Sin dirección registrada';
 
     let htmlProductos = '';
-    orden.productos.forEach(prod => {
+    (orden.productos || []).forEach(prod => {
+      const precio = Number(prod.precio || 0);
       htmlProductos += `
         <div class="mb-3 pb-3 border-bottom">
           <div class="d-flex justify-content-between">
-            <strong>${prod.nombre}</strong>
-            <span>Bs ${prod.precio.toFixed(2)}</span>
+            <strong>${escapeHtml(prod.nombre || 'Producto')}</strong>
+            <span>Bs ${precio.toFixed(2)}</span>
           </div>
-          <small class="text-muted">Cantidad: ${prod.cantidad}</small>
+          <small class="text-muted">Cantidad: ${Number(prod.cantidad || 0)}</small>
         </div>
       `;
     });
@@ -52,16 +55,80 @@ async function mostrarDetallesOrden() {
   }
 }
 
-const PAYPAL_USD_RATE = 6.96;
+let paypalInicializado = false;  // Control para evitar doble inicialización
+
+function obtenerCamposPerfilFaltantes(usuario) {
+  const campos = [
+    ['nombre', 'nombre completo'],
+    ['telefono', 'teléfono'],
+    ['direccion', 'dirección'],
+    ['ciudad', 'ciudad']
+  ];
+
+  return campos
+    .filter(([clave]) => !String(usuario?.[clave] || '').trim())
+    .map(([, etiqueta]) => etiqueta);
+}
+
+async function obtenerValidacionPerfilPago() {
+  const usuario = await APIService.obtenerPerfil();
+  if (!usuario || usuario.error) {
+    throw new Error(usuario?.error || 'No se pudo validar tu perfil');
+  }
+
+  const camposFaltantes = Array.isArray(usuario.camposPerfilFaltantes)
+    ? usuario.camposPerfilFaltantes
+    : obtenerCamposPerfilFaltantes(usuario);
+
+  return {
+    completo: usuario.perfilCompleto === true || camposFaltantes.length === 0,
+    camposFaltantes
+  };
+}
+
+function mostrarPerfilIncompleto(validacion) {
+  const aviso = document.getElementById('perfil-pago-incompleto');
+  const mensaje = document.getElementById('perfil-pago-mensaje');
+  const faltantes = validacion?.camposFaltantes || [];
+
+  if (mensaje) {
+    mensaje.textContent = faltantes.length
+      ? `Antes de pagar completa: ${faltantes.join(', ')}.`
+      : 'Necesitamos tus datos de contacto y envío antes de crear la orden.';
+  }
+  if (aviso) aviso.style.display = 'block';
+}
 
 function initPayPal(totalAmount) {
   const container = document.getElementById('paypal-button-container');
-  if (!container || !window.paypal) {
-    console.error('PayPal SDK no disponible todavía');
+  if (!container) return;
+
+  // Si ya está inicializado, solo actualizar el total visible y salir
+  if (paypalInicializado) {
+    const totalPagoEl = document.getElementById('total-pago');
+    if (totalPagoEl) totalPagoEl.textContent = `Bs ${Number(totalAmount).toFixed(2)}`;
     return;
   }
 
+  // Si el SDK aún no cargó, esperar hasta 5 segundos
+  if (!window.paypal) {
+    let intentos = 0;
+    const esperar = setInterval(() => {
+      intentos++;
+      if (window.paypal) {
+        clearInterval(esperar);
+        initPayPal(totalAmount);
+      } else if (intentos >= 50) {
+        clearInterval(esperar);
+        container.innerHTML = '<p class="text-danger small">No se pudo cargar PayPal. Recarga la página.</p>';
+      }
+    }, 100);
+    return;
+  }
+
+  // Limpiar e inicializar una sola vez
   container.innerHTML = '';
+  paypalInicializado = true;
 
   paypal.Buttons({
     style: {
@@ -74,6 +141,12 @@ function initPayPal(totalAmount) {
 
     createOrder: async function () {
       try {
+        const validacionPerfil = await obtenerValidacionPerfilPago();
+        if (!validacionPerfil.completo) {
+          mostrarPerfilIncompleto(validacionPerfil);
+          throw new Error('Completa tu perfil antes de pagar');
+        }
+
         const res = await fetch(`${API_BASE}/paypal/crear-orden`, {
           method: 'POST',
           headers: {
@@ -123,7 +196,11 @@ function initPayPal(totalAmount) {
     },
 
     onError: function (err) {
-      document.getElementById('pago-error').style.display = 'block';
+      const pagoError = document.getElementById('pago-error');
+      if (pagoError) {
+        pagoError.style.display = 'block';
+        pagoError.textContent = err?.message || 'Error en el pago. Intenta de nuevo.';
+      }
       console.error('PayPal error:', err);
     },
 

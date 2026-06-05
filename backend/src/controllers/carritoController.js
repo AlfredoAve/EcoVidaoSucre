@@ -26,10 +26,11 @@ router.get('/', async (req, res) => {
 // POST /api/carrito - Agregar producto al carrito
 router.post('/', async (req, res) => {
   try {
-    const { productoId, cantidad } = req.body;
+    const productoId = Number(req.body.productoId);
+    const cantidad = Number(req.body.cantidad);
     const usuarioId = req.usuario.id;
 
-    if (!productoId || !cantidad || cantidad < 1) {
+    if (!Number.isInteger(productoId) || !Number.isInteger(cantidad) || cantidad < 1) {
       return res.status(400).json({ error: 'Datos inválidos' });
     }
 
@@ -41,9 +42,9 @@ router.post('/', async (req, res) => {
 
     // Calcular la cantidad total que habría en el carrito
     const carritoActual = await CarritoRepository.obtenerCarritoUsuario(usuarioId);
-    const itemEnCarrito = carritoActual.find(item => item.productoId === parseInt(productoId));
+    const itemEnCarrito = carritoActual.find(item => item.productoId === productoId);
     const cantidadActual = itemEnCarrito ? itemEnCarrito.cantidad : 0;
-    const cantidadTotal = cantidadActual + parseInt(cantidad);
+    const cantidadTotal = cantidadActual + cantidad;
 
     if (producto.stock < cantidadTotal) {
       return res.status(400).json({ error: `Stock insuficiente. Ya tienes ${cantidadActual} en el carrito y el límite es ${producto.stock}.` });
@@ -61,12 +62,21 @@ router.post('/', async (req, res) => {
 // PUT /api/carrito/:productoId - Actualizar cantidad
 router.put('/:productoId', async (req, res) => {
   try {
-    const { cantidad } = req.body;
-    const { productoId } = req.params;
+    const cantidad = Number(req.body.cantidad);
+    const productoId = Number(req.params.productoId);
     const usuarioId = req.usuario.id;
 
-    if (!cantidad || cantidad < 0) {
+    if (!Number.isInteger(productoId) || !Number.isInteger(cantidad) || cantidad < 1) {
       return res.status(400).json({ error: 'Cantidad inválida' });
+    }
+
+    const producto = await ProductosRepository.obtenerPorId(productoId);
+    if (!producto) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    if (cantidad > producto.stock) {
+      return res.status(400).json({ error: `Stock insuficiente. El límite es ${producto.stock}.` });
     }
 
     const actualizado = await CarritoRepository.actualizarCantidad(

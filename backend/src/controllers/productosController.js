@@ -12,8 +12,9 @@ router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const categoriaId = req.query.categoria || '';
     const buscar = req.query.buscar || '';
+    const destacado = ['1', 'true'].includes(String(req.query.destacado).toLowerCase()) ? 1 : '';
 
-    const resultado = await ProductosRepository.obtenerPaginado(page, limit, categoriaId, buscar);
+    const resultado = await ProductosRepository.obtenerPaginado(page, limit, categoriaId, buscar, destacado);
     console.log(`📦 Productos encontrados: ${resultado.productos.length} (Total: ${resultado.total})`);
     
     // [NUEVO] Devolver objeto con metadatos de paginación

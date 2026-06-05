@@ -36,6 +36,33 @@ function getImageUrl(ruta) {
   return `${baseUrl}/uploads/${nombreArchivo}`;
 }
 
+function renderProductRating(promedio, total) {
+  const totalResenas = Number(total) || 0;
+  if (totalResenas <= 0) return '';
+
+  const valor = Math.max(0, Math.min(5, Number(promedio) || 0));
+  const redondeado = Math.round(valor * 2) / 2;
+  let estrellas = '';
+
+  for (let i = 1; i <= 5; i++) {
+    if (redondeado >= i) {
+      estrellas += '<i class="bi bi-star-fill"></i>';
+    } else if (redondeado >= i - 0.5) {
+      estrellas += '<i class="bi bi-star-half"></i>';
+    } else {
+      estrellas += '<i class="bi bi-star"></i>';
+    }
+  }
+
+  const etiqueta = `${valor.toFixed(1)} de 5, ${totalResenas} reseña${totalResenas === 1 ? '' : 's'}`;
+  return `
+    <div class="eco-rating" aria-label="${etiqueta}">
+      <span class="eco-rating-stars" aria-hidden="true">${estrellas}</span>
+      <span class="eco-rating-count">(${totalResenas})</span>
+    </div>
+  `;
+}
+
 class APIService {
   static getImageUrl = getImageUrl;
 
@@ -84,12 +111,13 @@ class APIService {
 
   // PRODUCTOS
   // [NUEVO] Soporte para paginación y filtros en la llamada a la API
-  static async obtenerProductos(page = 1, limit = 20, categoriaId = '', buscar = '') {
+  static async obtenerProductos(page = 1, limit = 20, categoriaId = '', buscar = '', destacado = '') {
     const params = new URLSearchParams();
     if (page) params.append('page', page);
     if (limit) params.append('limit', limit);
     if (categoriaId) params.append('categoria', categoriaId);
     if (buscar) params.append('buscar', buscar);
+    if (destacado !== '') params.append('destacado', destacado);
     
     const res = await fetch(`${API_BASE}/productos?${params.toString()}`, {
       headers: this.getHeaders(false)
@@ -199,6 +227,14 @@ class APIService {
     return res.json();
   }
 
+  static async confirmarRecepcionOrden(id) {
+    const res = await fetch(`${API_BASE}/ordenes/${id}/confirmar-recepcion`, {
+      method: 'PUT',
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
   static async descargarFactura(id) {
     const token = this.getToken();
     if (!token) { window.location.href = 'login.html'; return; }
@@ -253,6 +289,13 @@ class APIService {
     return res.json();
   }
 
+  static async puedeResenarProducto(productoId) {
+    const res = await fetch(`${API_BASE}/resenas/puede-resenar/${productoId}`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
   static async obtenerTodasResenasAdmin() {
     const res = await fetch(`${API_BASE}/resenas`, {
       headers: this.getHeaders()
@@ -273,6 +316,37 @@ class APIService {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(datos)
+    });
+    return res.json();
+  }
+
+  // NOTIFICACIONES
+  static async obtenerNotificaciones() {
+    const res = await fetch(`${API_BASE}/notificaciones`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async obtenerNotificacionesNoLeidas() {
+    const res = await fetch(`${API_BASE}/notificaciones/no-leidas`, {
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async marcarNotificacionLeida(id) {
+    const res = await fetch(`${API_BASE}/notificaciones/${id}/leida`, {
+      method: 'PUT',
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async marcarTodasNotificacionesLeidas() {
+    const res = await fetch(`${API_BASE}/notificaciones/leer-todas`, {
+      method: 'PUT',
+      headers: this.getHeaders()
     });
     return res.json();
   }

@@ -15,6 +15,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await cargarDatosPerfil();
   configurarEventos();
+  await cargarConteoNotificaciones();
+
+  const tabInicial = new URLSearchParams(window.location.search).get('tab');
+  if (['perfil', 'ordenes', 'notificaciones', 'resenas', 'favoritos'].includes(tabInicial)) {
+    cambiarTab(tabInicial);
+  }
 });
 
 async function cargarDatosPerfil() {
@@ -46,6 +52,7 @@ function configurarEventos() {
 
   // Formulario de perfil
   document.getElementById('profileForm')?.addEventListener('submit', guardarPerfil);
+  document.getElementById('markAllNotificationsBtn')?.addEventListener('click', marcarTodasNotificacionesLeidas);
 
   // Logout
   document.getElementById('logoutBtn')?.addEventListener('click', logout);
@@ -74,11 +81,58 @@ function cambiarTab(tabName) {
   // Cargar datos si es necesario
   if (tabName === 'ordenes') {
     cargarOrdenes();
+  } else if (tabName === 'notificaciones') {
+    cargarNotificaciones();
   } else if (tabName === 'resenas') {
     cargarResenas();
   } else if (tabName === 'favoritos') {
     cargarFavoritos();
   }
+}
+
+const ESTADOS_ORDEN = {
+  pendiente: { label: 'Pendiente', badge: 'bg-warning text-dark' },
+  confirmada: { label: 'Confirmada', badge: 'bg-info text-dark' },
+  enviado: { label: 'Enviada', badge: 'bg-primary' },
+  entrega_reportada: { label: 'Enviada', badge: 'bg-primary' },
+  entregado: { label: 'Recibida', badge: 'bg-success' },
+  completada: { label: 'Completada', badge: 'bg-success' },
+  cancelada: { label: 'Cancelada', badge: 'bg-danger' }
+};
+
+function renderPagoCliente(orden) {
+  const estadoPago = orden.estadoPago === 'pagado' ? 'pagado' : 'pendiente';
+  const metodo = orden.metodoPago === 'paypal' ? 'PayPal' : 'Contra entrega';
+  const badge = estadoPago === 'pagado' ? 'bg-success' : 'bg-warning text-dark';
+  const label = estadoPago === 'pagado' ? 'Pagado' : 'Pago pendiente';
+  return `<span class="badge ${badge}">${label}</span> <small class="text-muted">${metodo}</small>`;
+}
+
+function renderTimelineOrden(estado) {
+  const estadoVisual = estado === 'entrega_reportada' ? 'enviado' : estado;
+  const pasos = [
+    ['confirmada', 'Confirmada'],
+    ['enviado', 'Enviada'],
+    ['entregado', 'Recibida']
+  ];
+  const ordenEstados = ['pendiente', 'confirmada', 'enviado', 'entregado', 'completada'];
+  const posicion = ordenEstados.indexOf(estadoVisual);
+
+  if (estado === 'cancelada') {
+    return '<div class="order-timeline-cancelled"><i class="bi bi-x-circle"></i> Orden cancelada</div>';
+  }
+
+  return `
+    <div class="order-timeline">
+      ${pasos.map(([clave, etiqueta]) => {
+        const activo = posicion >= ordenEstados.indexOf(clave);
+        return `<div class="order-timeline-step ${activo ? 'is-complete' : ''}">
+          <span class="order-timeline-dot"><i class="bi bi-check-lg"></i></span>
+          <span>${etiqueta}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
 }
 
 async function cargarFavoritos() {
@@ -154,11 +208,24 @@ async function guardarPerfil(e) {
   e.preventDefault();
 
   const datos = {
-    nombre: document.getElementById('nombre').value,
-    telefono: document.getElementById('telefono').value,
-    ciudad: document.getElementById('ciudad').value,
-    direccion: document.getElementById('direccion').value
+    nombre: document.getElementById('nombre').value.trim(),
+    telefono: document.getElementById('telefono').value.trim(),
+    ciudad: document.getElementById('ciudad').value.trim(),
+    direccion: document.getElementById('direccion').value.trim()
   };
+
+  const faltantes = Object.entries({
+    nombre: datos.nombre,
+    teléfono: datos.telefono,
+    ciudad: datos.ciudad,
+    dirección: datos.direccion
+  }).filter(([, valor]) => !valor).map(([campo]) => campo);
+
+  if (faltantes.length) {
+    document.getElementById('errorMsg').textContent = `Completa los campos obligatorios: ${faltantes.join(', ')}.`;
+    document.getElementById('errorMsg').style.display = 'block';
+    return;
+  }
 
   try {
     const resultado = await APIService.actualizarPerfil(datos);
@@ -178,6 +245,11 @@ async function guardarPerfil(e) {
 
     // Actualizar nombre en header
     document.getElementById('userName').textContent = datos.nombre;
+    const usuarioLocal = JSON.parse(localStorage.getItem('usuario') || 'null');
+    if (usuarioLocal) {
+      usuarioLocal.nombre = datos.nombre;
+      localStorage.setItem('usuario', JSON.stringify(usuarioLocal));
+    }
   } catch (error) {
     document.getElementById('errorMsg').textContent = 'Error al guardar el perfil';
     document.getElementById('errorMsg').style.display = 'block';
@@ -198,22 +270,43 @@ async function cargarOrdenes() {
 
     let html = '';
     ordenes.forEach(orden => {
+      const estado = ESTADOS_ORDEN[orden.estado] || { label: orden.estado, badge: 'bg-secondary' };
+      const seguimiento = orden.numeroSeguimiento
+        ? `<p class="mb-1 text-muted small"><strong>Seguimiento:</strong> ${escapeHtml(orden.numeroSeguimiento)}</p>`
+        : '';
+      const textoConfirmar = orden.metodoPago === 'contraentrega'
+        ? 'Confirmar recepción y pago en efectivo'
+        : 'Confirmar que recibí mi pedido';
+      const confirmarRecepcion = ['enviado', 'entrega_reportada'].includes(orden.estado)
+        ? `<button class="btn btn-sm btn-success" onclick="window.confirmarRecepcionOrden(${orden.id})">
+            <i class="bi bi-box2-heart"></i> ${textoConfirmar}
+          </button>`
+        : '';
+      const mensajeProblema = encodeURIComponent(`Hola EcoVida, necesito ayuda con mi orden #${orden.id}.`);
+
       html += `
-        <div class="mb-3 p-3 border rounded">
-          <div class="d-flex justify-content-between mb-2">
+        <div class="mb-3 p-3 border rounded order-client-card">
+          <div class="d-flex justify-content-between gap-2 mb-2">
             <strong>Orden #${orden.id}</strong>
-            <span class="badge bg-info">${escapeHtml(orden.estado)}</span>
+            <span class="badge ${estado.badge}">${escapeHtml(estado.label)}</span>
           </div>
           <p class="mb-1 text-muted small">Fecha: ${new Date(orden.fechaCreacion).toLocaleDateString()}</p>
-          <p class="mb-1 text-muted small">Total: <strong class="text-success">Bs ${orden.total.toFixed(2)}</strong></p>
-          <p class="mb-0 text-muted small">Envío a: ${escapeHtml(orden.direccionEnvio)}</p>
-          <div class="mt-3 pt-2 border-top d-flex gap-2">
+          <p class="mb-1 text-muted small">Total: <strong class="text-success">Bs ${Number(orden.total || 0).toFixed(2)}</strong></p>
+          <p class="mb-1 text-muted small">Pago: ${renderPagoCliente(orden)}</p>
+          <p class="mb-1 text-muted small">Envío a: ${escapeHtml(orden.direccionEnvio)}</p>
+          ${seguimiento}
+          ${renderTimelineOrden(orden.estado)}
+          <div class="mt-3 pt-2 border-top d-flex gap-2 flex-wrap">
+            ${confirmarRecepcion}
             <button class="btn btn-sm btn-outline-primary" onclick="window.verDetalleOrdenCliente(${orden.id})">
               <i class="bi bi-eye"></i> Ver detalle
             </button>
             <button class="btn btn-sm btn-outline-secondary" onclick="window.descargarFacturaCliente(${orden.id})">
               <i class="bi bi-file-earmark-pdf"></i> Descargar Factura
             </button>
+            <a class="btn btn-sm btn-outline-danger" href="https://wa.me/59175442968?text=${mensajeProblema}" target="_blank" rel="noopener noreferrer">
+              <i class="bi bi-exclamation-circle"></i> Reportar un problema
+            </a>
           </div>
         </div>
       `;
@@ -224,6 +317,81 @@ async function cargarOrdenes() {
     console.error('Error cargando órdenes:', error);
     container.innerHTML = '<p class="text-danger">Error al cargar órdenes</p>';
   }
+}
+
+window.confirmarRecepcionOrden = function(ordenId) {
+  showConfirm('¿Confirmas que recibiste tu pedido? Si fue contra entrega, también confirmas que pagaste en efectivo.', async () => {
+    try {
+      const resultado = await APIService.confirmarRecepcionOrden(ordenId);
+      if (resultado.error) {
+        showNotif(resultado.error, 'error');
+        return;
+      }
+      showNotif(resultado.mensaje || 'Recepción confirmada', 'success');
+      await cargarOrdenes();
+      await cargarConteoNotificaciones();
+    } catch (error) {
+      showNotif('No se pudo confirmar la recepción', 'error');
+    }
+  });
+};
+
+async function cargarConteoNotificaciones() {
+  try {
+    const data = await APIService.obtenerNotificacionesNoLeidas();
+    const badge = document.getElementById('profileNotificationCount');
+    if (!badge) return;
+    const total = Number(data.total) || 0;
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'inline-block' : 'none';
+  } catch (error) {
+    console.error('Error cargando conteo de notificaciones:', error);
+  }
+}
+
+async function cargarNotificaciones() {
+  const container = document.getElementById('notificacionesList');
+  if (!container) return;
+  container.innerHTML = '<div class="spinner-border" role="status"></div>';
+
+  try {
+    const data = await APIService.obtenerNotificaciones();
+    const notificaciones = data.notificaciones || [];
+    if (!notificaciones.length) {
+      container.innerHTML = '<p class="text-muted mb-0">No tienes notificaciones todavía.</p>';
+      return;
+    }
+
+    container.innerHTML = notificaciones.map(notificacion => `
+      <button class="notification-item ${notificacion.leida ? '' : 'is-unread'}"
+              type="button"
+              onclick="window.abrirNotificacion(${notificacion.id}, '${escapeHtml(notificacion.enlace || '')}')">
+        <span class="notification-icon"><i class="bi bi-bell${notificacion.leida ? '' : '-fill'}"></i></span>
+        <span class="notification-content">
+          <strong>${escapeHtml(notificacion.mensaje)}</strong>
+          <small>${new Date(notificacion.fechaCreacion).toLocaleString()}</small>
+        </span>
+      </button>
+    `).join('');
+  } catch (error) {
+    container.innerHTML = '<p class="text-danger">No se pudieron cargar las notificaciones.</p>';
+  }
+}
+
+window.abrirNotificacion = async function(id, enlace) {
+  await APIService.marcarNotificacionLeida(id);
+  await cargarConteoNotificaciones();
+  if (enlace) {
+    window.location.href = enlace;
+  } else {
+    cargarNotificaciones();
+  }
+};
+
+async function marcarTodasNotificacionesLeidas() {
+  await APIService.marcarTodasNotificacionesLeidas();
+  await cargarConteoNotificaciones();
+  await cargarNotificaciones();
 }
 
 async function cargarResenas() {
@@ -287,8 +455,10 @@ window.verDetalleOrdenCliente = async function(ordenId) {
               </div>
               <div class="modal-body">
                 <p class="mb-1 text-muted small">Estado: <strong id="clientOrdEstado" class="text-dark"></strong></p>
+                <p class="mb-1 text-muted small">Pago: <span id="clientOrdPago"></span></p>
                 <p class="mb-1 text-muted small">Teléfono: <span id="clientOrdTelefono"></span></p>
-                <p class="mb-3 text-muted small">Dirección: <span id="clientOrdEnvio"></span></p>
+                <p class="mb-1 text-muted small">Dirección: <span id="clientOrdEnvio"></span></p>
+                <p class="mb-3 text-muted small">Seguimiento: <span id="clientOrdTracking"></span></p>
                 <div class="table-responsive">
                   <table class="table table-sm align-middle">
                     <thead class="table-light">
@@ -308,6 +478,10 @@ window.verDetalleOrdenCliente = async function(ordenId) {
                     </tfoot>
                   </table>
                 </div>
+                <div class="mt-4">
+                  <h6 class="fw-bold">Historial de la orden</h6>
+                  <div id="clientOrdHistory"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -319,12 +493,17 @@ window.verDetalleOrdenCliente = async function(ordenId) {
 
     document.getElementById('clientOrdId').textContent = orden.id;
     document.getElementById('clientOrdEstado').textContent = (orden.estado || '').toUpperCase();
+    const pagoClienteDetalle = document.getElementById('clientOrdPago');
+    if (pagoClienteDetalle) {
+      pagoClienteDetalle.innerHTML = renderPagoCliente(orden);
+    }
     document.getElementById('clientOrdTelefono').textContent = orden.telefono || 'No registrado';
     // Mostrar dirección del perfil del cliente, no la dirección de pago
     const dirPerfil = orden.direccionPerfil
       ? (orden.direccionPerfil + (orden.ciudad ? ', ' + orden.ciudad : ''))
       : null;
     document.getElementById('clientOrdEnvio').textContent = dirPerfil || orden.direccionEnvio || 'N/A';
+    document.getElementById('clientOrdTracking').textContent = orden.numeroSeguimiento || 'Aún no disponible';
     document.getElementById('clientOrdTotal').textContent = 'Bs ' + orden.total.toFixed(2);
     
     const tbody = document.getElementById('clientOrdProducts');
@@ -336,6 +515,14 @@ window.verDetalleOrdenCliente = async function(ordenId) {
         <td>Bs ${(p.cantidad * p.precio).toFixed(2)}</td>
       </tr>
     `).join('');
+
+    document.getElementById('clientOrdHistory').innerHTML = (orden.historial || []).map(item => `
+      <div class="order-history-item">
+        <strong>${escapeHtml(ESTADOS_ORDEN[item.estadoNuevo]?.label || item.estadoNuevo)}</strong>
+        <small>${new Date(item.fechaCreacion).toLocaleString()} · ${escapeHtml(item.actorNombre || item.actorRol || 'Sistema')}</small>
+        ${item.nota ? `<span>${escapeHtml(item.nota)}</span>` : ''}
+      </div>
+    `).join('') || '<p class="text-muted small">Sin historial disponible.</p>';
 
     if (window.bootstrap && window.bootstrap.Modal) {
       const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);

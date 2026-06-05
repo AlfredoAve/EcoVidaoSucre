@@ -164,6 +164,7 @@
 <th>Categoría</th>
 <th>Precio</th>
 <th>Stock</th>
+<th>Destacado</th>
 <th>Acciones</th>
 </tr>
 </thead>
@@ -204,6 +205,7 @@
 <span class="status-chip" style="background: rgba(13,110,253,0.15); color: #0d6efd;" data-status="confirmada">Confirmada</span>
 <span class="status-chip" style="background: rgba(23,162,184,0.15); color: #117a8b;" data-status="enviado">Enviado</span>
 <span class="status-chip" style="background: rgba(32,201,151,0.15); color: #189871;" data-status="entregado">Entregado</span>
+<span class="status-chip" style="background: rgba(25,135,84,0.15); color: #146c43;" data-status="completada">Completada</span>
 <span class="status-chip" style="background: rgba(220,53,69,0.15); color: #dc3545;" data-status="cancelada">Cancelada</span>
 </div>
 <div class="table-responsive eco-table-wrap" id="ordenesList">
@@ -214,6 +216,7 @@
 <th>Cliente</th>
 <th>Total</th>
 <th>Estado</th>
+<th>Pago</th>
 <th>Fecha</th>
 <th>Acciones</th>
 </tr>
@@ -274,7 +277,7 @@
 </div>
 <p class="text-muted">Resumen y limpieza de registros (activos e inactivos).</p>
 <div class="row g-3 mb-4">
-<div class="col-md-4">
+<div class="col-md-6 col-xl-3">
 <div class="card shadow-sm eco-kpi-card">
 <div class="card-body">
 <h6 class="card-subtitle text-muted">Productos</h6>
@@ -286,7 +289,7 @@
 </div>
 </div>
 </div>
-<div class="col-md-4">
+<div class="col-md-6 col-xl-3">
 <div class="card shadow-sm eco-kpi-card">
 <div class="card-body">
 <h6 class="card-subtitle text-muted">Categorías</h6>
@@ -298,7 +301,7 @@
 </div>
 </div>
 </div>
-<div class="col-md-4">
+<div class="col-md-6 col-xl-3">
 <div class="card shadow-sm eco-kpi-card">
 <div class="card-body">
 <h6 class="card-subtitle text-muted">Usuarios</h6>
@@ -306,6 +309,17 @@
 <span>Total: <strong id="dbUsuariosTotal">0</strong></span>
 <span>Activos: <strong id="dbUsuariosActivos">0</strong></span>
 <span>Inactivos: <strong id="dbUsuariosInactivos">0</strong></span>
+</div>
+</div>
+</div>
+</div>
+<div class="col-md-6 col-xl-3">
+<div class="card shadow-sm eco-kpi-card">
+<div class="card-body">
+<h6 class="card-subtitle text-muted">Órdenes</h6>
+<div class="d-flex gap-3 mt-2">
+<span>Total: <strong id="dbOrdenesTotal">0</strong></span>
+<span>Eliminables: <strong id="dbOrdenesCerradas">0</strong></span>
 </div>
 </div>
 </div>
@@ -338,9 +352,21 @@
 <div class="table-responsive eco-table-wrap">
 <table class="table table-hover table-sm eco-admin-table">
 <thead class="table-light">
-<tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th></tr>
+<tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
 </thead>
 <tbody id="dbUsuariosTableBody"></tbody>
+</table>
+</div>
+</div>
+<div class="mt-4">
+<h5 class="fw-bold">Órdenes (todas)</h5>
+<p class="text-muted small mb-2">Se pueden eliminar órdenes para limpieza, excepto las que están enviadas.</p>
+<div class="table-responsive eco-table-wrap">
+<table class="table table-hover table-sm eco-admin-table">
+<thead class="table-light">
+<tr><th>ID</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Pago</th><th>Fecha</th><th>Acciones</th></tr>
+</thead>
+<tbody id="dbOrdenesTableBody"></tbody>
 </table>
 </div>
 </div>
@@ -366,6 +392,11 @@
 <label class="form-label" for="prodDesc">Descripción</label>
 <textarea class="form-control" id="prodDesc" rows="3"></textarea>
 </div>
+<div class="mb-3">
+<label class="form-label" for="prodBeneficios">Beneficios del producto</label>
+<textarea class="form-control" id="prodBeneficios" maxlength="404" placeholder="Favorece la digestión&#10;Ayuda a la relajación&#10;Sin conservantes ni aditivos" rows="4"></textarea>
+<div class="form-text">Escribe un beneficio por línea. Máximo 5 beneficios y 80 caracteres por beneficio.</div>
+</div>
 <div class="row">
 <div class="col-md-6 mb-3">
 <label class="form-label" for="prodPrecio">Precio</label>
@@ -381,6 +412,13 @@
 <select class="form-control" id="prodCategoria" required="">
 <option value="">Seleccionar...</option>
 </select>
+</div>
+<div class="mb-3">
+<div class="form-check form-switch">
+<input class="form-check-input" id="prodDestacado" role="switch" type="checkbox"/>
+<label class="form-check-label" for="prodDestacado">Destacado</label>
+</div>
+<div class="form-text">Los productos destacados aparecen en la sección principal del inicio.</div>
 </div>
 <div class="mb-3">
 <label class="form-label" for="prodImagenFile">Imagen (archivo)</label>
@@ -452,6 +490,8 @@
 <div><strong>Email:</strong> <span id="orderDetailEmail">-</span></div>
 <div><strong>Teléfono:</strong> <span id="orderDetailPhone">-</span></div>
 <div><strong>Dirección:</strong> <span id="orderDetailAddress">-</span></div>
+<div><strong>Seguimiento:</strong> <span id="orderDetailTracking">-</span></div>
+<div><strong>Pago:</strong> <span id="orderDetailPayment">-</span></div>
 </div>
 <div class="table-responsive">
 <table class="table table-sm table-striped align-middle">
@@ -464,6 +504,10 @@
 <div class="text-end">
 <strong>Total:</strong>
 <span class="text-success fw-bold" id="orderDetailTotal">Bs 0.00</span>
+</div>
+<div class="mt-4">
+<h6 class="fw-bold">Historial de estados</h6>
+<div id="orderDetailHistory"></div>
 </div>
 </div>
 <div class="modal-footer">
@@ -517,29 +561,13 @@
 <button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
 </div>
 <div class="modal-body">
-<p class="mb-0" id="shippedOrderMessage">¿Marcar esta orden como enviada?</p>
+<p class="mb-3" id="shippedOrderMessage">¿Marcar esta orden como enviada?</p>
+<label class="form-label" for="shippedOrderTracking">Referencia o número de seguimiento</label>
+<input class="form-control" id="shippedOrderTracking" placeholder="Ej. ENV-123 o Entrega local" type="text"/>
 </div>
 <div class="modal-footer">
 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
 <button class="btn btn-primary" id="shippedOrderActionBtn" type="button"><i class="bi bi-truck"></i> Sí, Enviada</button>
-</div>
-</div>
-</div>
-</div>
-<!-- Modal Marcar Entregada -->
-<div aria-hidden="true" class="modal fade" id="deliveredOrderModal" tabindex="-1">
-<div class="modal-dialog">
-<div class="modal-content">
-<div class="modal-header bg-success text-white">
-<h5 class="modal-title">Marcar como Entregada</h5>
-<button aria-label="Cerrar" class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
-</div>
-<div class="modal-body">
-<p class="mb-0" id="deliveredOrderMessage">¿Marcar esta orden como entregada?</p>
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
-<button class="btn btn-success" id="deliveredOrderActionBtn" type="button"><i class="bi bi-check2-all"></i> Sí, Entregada</button>
 </div>
 </div>
 </div>

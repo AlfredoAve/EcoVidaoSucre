@@ -1,9 +1,26 @@
+// paypalService.js — Variables leídas en tiempo de ejecución, no de importación
 const PAYPAL_BASE = process.env.PAYPAL_BASE_URL || 'https://api-m.sandbox.paypal.com';
-const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
-const SECRET = process.env.PAYPAL_SECRET;
+
+// ❌ ANTES (bug): se leían al importar el módulo, antes de que dotenv cargara el .env
+// const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+// const SECRET = process.env.PAYPAL_SECRET;
+
+// ✅ AHORA: se leen en cada llamada, garantizando que .env ya esté cargado
+function getCredentials() {
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const secret   = process.env.PAYPAL_SECRET;
+
+  if (!clientId || !secret) {
+    throw new Error(
+      'PayPal no configurado. Falta PAYPAL_CLIENT_ID o PAYPAL_SECRET en variables de entorno.'
+    );
+  }
+  return { clientId, secret };
+}
 
 async function getAccessToken() {
-  const auth = Buffer.from(`${CLIENT_ID}:${SECRET}`).toString('base64');
+  const { clientId, secret } = getCredentials();
+  const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
 
   const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
     method: 'POST',
@@ -16,7 +33,9 @@ async function getAccessToken() {
 
   const data = await res.json();
   if (!data.access_token) {
-    throw new Error('No se pudo obtener token PayPal: ' + JSON.stringify(data));
+    throw new Error(
+      'No se pudo obtener token PayPal: ' + JSON.stringify(data)
+    );
   }
   return data.access_token;
 }
@@ -44,7 +63,9 @@ async function crearOrdenPayPal(total, moneda = 'USD') {
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.details?.[0]?.description || data.message || 'Error al crear orden en PayPal');
+    throw new Error(
+      data.details?.[0]?.description || data.message || 'Error al crear orden en PayPal'
+    );
   }
   return data;
 }
@@ -62,7 +83,9 @@ async function capturarOrdenPayPal(paypalOrderId) {
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.details?.[0]?.description || data.message || 'Error al capturar orden en PayPal');
+    throw new Error(
+      data.details?.[0]?.description || data.message || 'Error al capturar orden en PayPal'
+    );
   }
   return data;
 }

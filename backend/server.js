@@ -17,6 +17,7 @@ const adminController = require('./src/controllers/adminController');
 const userController = require('./src/controllers/userController');
 const paypalController = require('./src/controllers/paypalController');
 const favoritosController = require('./src/controllers/favoritosController');
+const notificacionesController = require('./src/controllers/notificacionesController');
 
 const cors = require('cors');
 const app = express();
@@ -24,15 +25,38 @@ const app = express();
 // [NUEVO] Aplicar Helmet globalmente para seguridad, pero deshabilitando CSP para evitar bloqueos
 app.use(helmet({
   contentSecurityPolicy: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
 }));
 
 // [NUEVO] Aplicar compresión GZIP
 app.use(compression());
 
 // Middleware
+// [CORREGIDO] CORS ampliado para cubrir localhost con y sin puerto,
+// y cualquier subdominio de Vercel/Render donde esté el frontend
+const allowedOrigins = [
+  'https://eco-vida-sucre.vercel.app',
+  'https://ecovida-backend.onrender.com',
+  'http://localhost:3001',
+  'http://localhost:3000',
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:3000',
+];
+
 app.use(cors({
-  origin: ['https://eco-vida-sucre.vercel.app', 'http://localhost:3001', 'http://127.0.0.1:3001'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (Postman, apps móviles, mismo servidor)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Permitir cualquier subdominio de onrender.com o vercel.app
+    if (/\.onrender\.com$/.test(origin) || /\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('CORS no permitido para: ' + origin));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -58,6 +82,7 @@ app.use('/api/admin', adminController);
 app.use('/api/users', userController);
 app.use('/api/paypal', paypalController);
 app.use('/api/favoritos', favoritosController);
+app.use('/api/notificaciones', notificacionesController);
 
 // Ruta raíz: redirige a la página principal
 app.get('/', (req, res) => {
@@ -91,6 +116,18 @@ app.use((req, res) => {
 
 initDB()
   .then(() => {
+    // Verificar variables de entorno críticas
+    const warnings = [];
+    if (!process.env.PAYPAL_CLIENT_ID) warnings.push('⚠️  PAYPAL_CLIENT_ID no definido — PayPal no funcionará');
+    if (!process.env.PAYPAL_SECRET)    warnings.push('⚠️  PAYPAL_SECRET no definido — PayPal no funcionará');
+    if (!process.env.PAYPAL_BASE_URL)  warnings.push('ℹ️  PAYPAL_BASE_URL no definido — usando sandbox por defecto');
+    if (!process.env.JWT_SECRET)       warnings.push('⚠️  JWT_SECRET no definido — usando clave insegura por defecto');
+    if (warnings.length) {
+      console.log('\n════════════ ADVERTENCIAS DE CONFIGURACIÓN ════════════');
+      warnings.forEach(w => console.log(w));
+      console.log('═══════════════════════════════════════════════════════\n');
+    }
+
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor EcoVida escuchando en puerto ${PORT}`);
       console.log(`📱 Local: http://localhost:${PORT}/frontend/index.html`);
