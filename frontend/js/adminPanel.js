@@ -465,11 +465,11 @@ async function guardarCategoria(e) {
 
 function confirmarEliminarCategoria(categoriaId) {
   const cat = todasCategorias.find(c => c.id === categoriaId) || categoriasDB.find(c => c.id === categoriaId);
-  confirmar(`¿Eliminar la categoría "${cat?.nombre || 'esta categoría'}"? Los productos asociados quedarán sin categoría.`, async () => {
+  confirmar(`¿Desactivar la categoría "${cat?.nombre || 'esta categoría'}"? Podrás volver a activarla desde Base de datos.`, async () => {
     try {
       const result = await apiFetch(`/categorias/${categoriaId}`, { method: 'DELETE' });
       if (result.error) { mostrarToast(result.error, 'error'); return; }
-      mostrarToast('Categoría eliminada');
+      mostrarToast('Categoría desactivada');
       await cargarCategorias();
       await cargarBaseDatos();
     } catch (err) {

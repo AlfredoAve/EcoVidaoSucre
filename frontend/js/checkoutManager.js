@@ -233,7 +233,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btnContraentrega.textContent = '📦 Pagar contra entrega';
       }
     } catch (err) {
-      alert('Error al procesar el pedido');
+      if (typeof showNotif === 'function') {
+        showNotif('Error al procesar el pedido', 'error');
+      }
       btnContraentrega.disabled = false;
       btnContraentrega.textContent = '📦 Pagar contra entrega';
     }

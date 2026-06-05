@@ -94,7 +94,6 @@ const ESTADOS_ORDEN = {
   pendiente: { label: 'Pendiente', badge: 'bg-warning text-dark' },
   confirmada: { label: 'Confirmada', badge: 'bg-info text-dark' },
   enviado: { label: 'Enviada', badge: 'bg-primary' },
-  entrega_reportada: { label: 'Enviada', badge: 'bg-primary' },
   entregado: { label: 'Recibida', badge: 'bg-success' },
   completada: { label: 'Completada', badge: 'bg-success' },
   cancelada: { label: 'Cancelada', badge: 'bg-danger' }
@@ -277,7 +276,7 @@ async function cargarOrdenes() {
       const textoConfirmar = orden.metodoPago === 'contraentrega'
         ? 'Confirmar recepción y pago en efectivo'
         : 'Confirmar que recibí mi pedido';
-      const confirmarRecepcion = ['enviado', 'entrega_reportada'].includes(orden.estado)
+      const confirmarRecepcion = orden.estado === 'enviado'
         ? `<button class="btn btn-sm btn-success" onclick="window.confirmarRecepcionOrden(${orden.id})">
             <i class="bi bi-box2-heart"></i> ${textoConfirmar}
           </button>`
