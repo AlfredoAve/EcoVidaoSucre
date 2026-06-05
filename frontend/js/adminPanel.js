@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     cargarOrdenes(),
     cargarResenasAdmin()
   ]);
+  renderDashboardInsights();
 
   configurarEventos();
 });
@@ -136,7 +137,7 @@ function cambiarTab(tabName) {
 
   if (tabName === 'ordenes')   { cargarOrdenes(); cargarEstadisticas(); }
   if (tabName === 'usuarios')  cargarUsuarios();
-  if (tabName === 'dashboard') cargarEstadisticas();
+  if (tabName === 'dashboard') { cargarEstadisticas(); renderDashboardInsights(); }
   if (tabName === 'base-datos') cargarBaseDatos();
   if (tabName === 'mensajes')  cargarMensajes();
   if (tabName === 'resenas')   cargarResenasAdmin();
@@ -151,6 +152,77 @@ function setBtnLoading(btn, loading) {
   } else {
     btn.disabled = false;
     btn.innerHTML = btn._orig || 'Guardar';
+  }
+}
+
+function renderDashboardInsights() {
+  const lowStockEl = document.getElementById('dashboardLowStock');
+  const actionOrdersEl = document.getElementById('dashboardOrdersAction');
+  const recentOrdersEl = document.getElementById('dashboardRecentOrders');
+
+  if (lowStockEl) {
+    const lowStock = [...todosProductos]
+      .filter(prod => esActivo(prod.activo) && Number(prod.stock || 0) <= 5)
+      .sort((a, b) => Number(a.stock || 0) - Number(b.stock || 0))
+      .slice(0, 6);
+
+    lowStockEl.innerHTML = lowStock.length
+      ? lowStock.map(prod => `
+          <div class="admin-insight-row">
+            <div>
+              <strong>${escapeHtml(prod.nombre)}</strong>
+              <span>${escapeHtml(prod.categoriaNombre || 'Sin categoria')}</span>
+            </div>
+            <button class="admin-stock-pill ${Number(prod.stock || 0) === 0 ? 'is-empty' : ''}" onclick="abrirEditarProducto(${prod.id})">
+              ${Number(prod.stock || 0)} u.
+            </button>
+          </div>
+        `).join('')
+      : '<div class="admin-empty-state">Todo bien: no hay productos con stock bajo.</div>';
+  }
+
+  if (actionOrdersEl) {
+    const priority = {
+      pendiente: 'Confirmar pedido',
+      confirmada: 'Marcar como enviado',
+      entregado: 'Completar orden'
+    };
+    const orders = [...todasOrdenes]
+      .filter(orden => priority[orden.estado])
+      .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion))
+      .slice(0, 5);
+
+    actionOrdersEl.innerHTML = orders.length
+      ? orders.map(orden => `
+          <div class="admin-insight-row">
+            <div>
+              <strong>#${orden.id} · ${escapeHtml(orden.nombre || 'Cliente')}</strong>
+              <span>${priority[orden.estado]} · Bs ${Number(orden.total || 0).toFixed(2)}</span>
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="verDetalleOrden(${orden.id})">
+              Ver
+            </button>
+          </div>
+        `).join('')
+      : '<div class="admin-empty-state">No hay pedidos esperando accion en este momento.</div>';
+  }
+
+  if (recentOrdersEl) {
+    const recent = [...todasOrdenes]
+      .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion))
+      .slice(0, 5);
+
+    recentOrdersEl.innerHTML = recent.length
+      ? `<div class="admin-recent-grid">
+          ${recent.map(orden => `
+            <button class="admin-recent-order" onclick="verDetalleOrden(${orden.id})">
+              <span>#${orden.id}</span>
+              <strong>${escapeHtml(orden.nombre || 'Cliente')}</strong>
+              <small>${escapeHtml(orden.estado || 'pendiente')} · Bs ${Number(orden.total || 0).toFixed(2)}</small>
+            </button>
+          `).join('')}
+        </div>`
+      : '<div class="admin-empty-state">Aun no hay ordenes registradas.</div>';
   }
 }
 
@@ -202,6 +274,7 @@ async function cargarProductos() {
     const response = await apiFetch('/admin/productos');
     todosProductos = Array.isArray(response) ? response.filter(prod => esActivo(prod.activo)) : [];
     renderizarTablaProductos();
+    renderDashboardInsights();
   } catch (e) {
     console.error('Error cargando productos:', e);
   }
@@ -737,6 +810,7 @@ async function cargarOrdenes() {
     }
     todasOrdenes = Array.isArray(ordenes) ? ordenes : [];
     renderizarTablaOrdenes();
+    renderDashboardInsights();
   } catch (e) {
     console.error('Error cargando órdenes:', e);
     tbody.innerHTML = '<tr><td colspan="7" class="text-danger text-center py-3">Error al cargar órdenes</td></tr>';

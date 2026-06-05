@@ -134,6 +134,37 @@ function renderTimelineOrden(estado) {
   `;
 }
 
+function renderResumenOrdenesCliente(ordenes) {
+  const summary = document.getElementById('ordenesSummary');
+  if (!summary) return;
+
+  const total = ordenes.length;
+  const activas = ordenes.filter(o => ['pendiente', 'confirmada', 'enviado'].includes(o.estado)).length;
+  const porConfirmar = ordenes.filter(o => o.estado === 'enviado').length;
+  const recibidas = ordenes.filter(o => ['entregado', 'completada'].includes(o.estado)).length;
+
+  summary.innerHTML = `
+    <div class="client-order-kpis">
+      <div class="client-order-kpi">
+        <span>Total pedidos</span>
+        <strong>${total}</strong>
+      </div>
+      <div class="client-order-kpi">
+        <span>En proceso</span>
+        <strong>${activas}</strong>
+      </div>
+      <div class="client-order-kpi ${porConfirmar ? 'is-attention' : ''}">
+        <span>Por confirmar</span>
+        <strong>${porConfirmar}</strong>
+      </div>
+      <div class="client-order-kpi">
+        <span>Recibidos</span>
+        <strong>${recibidas}</strong>
+      </div>
+    </div>
+  `;
+}
+
 async function cargarFavoritos() {
   const container = document.getElementById('favoritosList');
   const emptyState = document.getElementById('favoritosEmpty');
@@ -263,13 +294,22 @@ async function cargarOrdenes() {
     const ordenes = await APIService.obtenerMisOrdenes();
 
     if (!ordenes || ordenes.length === 0) {
+      renderResumenOrdenesCliente([]);
       container.innerHTML = '<p class="text-muted">No tienes órdenes aún</p>';
       return;
     }
 
+    renderResumenOrdenesCliente(ordenes);
+
     let html = '';
     ordenes.forEach(orden => {
       const estado = ESTADOS_ORDEN[orden.estado] || { label: orden.estado, badge: 'bg-secondary' };
+      const productosOrden = Array.isArray(orden.productos) ? orden.productos : [];
+      const resumenProductos = productosOrden
+        .slice(0, 2)
+        .map(p => `${escapeHtml(p.nombre)} x${Number(p.cantidad || 0)}`)
+        .join(' · ');
+      const extrasProductos = productosOrden.length > 2 ? ` +${productosOrden.length - 2} más` : '';
       const seguimiento = orden.numeroSeguimiento
         ? `<p class="mb-1 text-muted small"><strong>Seguimiento:</strong> ${escapeHtml(orden.numeroSeguimiento)}</p>`
         : '';
@@ -284,18 +324,28 @@ async function cargarOrdenes() {
       const mensajeProblema = encodeURIComponent(`Hola EcoVida, necesito ayuda con mi orden #${orden.id}.`);
 
       html += `
-        <div class="mb-3 p-3 border rounded order-client-card">
-          <div class="d-flex justify-content-between gap-2 mb-2">
-            <strong>Orden #${orden.id}</strong>
+        <div class="order-client-card">
+          <div class="order-client-head">
+            <div>
+              <span class="order-client-id">Orden #${orden.id}</span>
+              <p class="order-client-date mb-0">${new Date(orden.fechaCreacion).toLocaleDateString()}</p>
+            </div>
             <span class="badge ${estado.badge}">${escapeHtml(estado.label)}</span>
           </div>
-          <p class="mb-1 text-muted small">Fecha: ${new Date(orden.fechaCreacion).toLocaleDateString()}</p>
-          <p class="mb-1 text-muted small">Total: <strong class="text-success">Bs ${Number(orden.total || 0).toFixed(2)}</strong></p>
-          <p class="mb-1 text-muted small">Pago: ${renderPagoCliente(orden)}</p>
-          <p class="mb-1 text-muted small">Envío a: ${escapeHtml(orden.direccionEnvio)}</p>
-          ${seguimiento}
+          <div class="order-client-body">
+            <div>
+              <p class="order-client-products">${resumenProductos || 'Productos del pedido'}${extrasProductos}</p>
+              <p class="mb-1 text-muted small">Pago: ${renderPagoCliente(orden)}</p>
+              <p class="mb-1 text-muted small">Envío a: ${escapeHtml(orden.direccionEnvio)}</p>
+              ${seguimiento}
+            </div>
+            <div class="order-client-total">
+              <span>Total</span>
+              <strong>Bs ${Number(orden.total || 0).toFixed(2)}</strong>
+            </div>
+          </div>
           ${renderTimelineOrden(orden.estado)}
-          <div class="mt-3 pt-2 border-top d-flex gap-2 flex-wrap">
+          <div class="order-client-actions">
             ${confirmarRecepcion}
             <button class="btn btn-sm btn-outline-primary" onclick="window.verDetalleOrdenCliente(${orden.id})">
               <i class="bi bi-eye"></i> Ver detalle
