@@ -26,6 +26,7 @@ const app = express();
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
 // [NUEVO] Aplicar compresión GZIP
@@ -69,7 +70,12 @@ app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 const fs = require('fs');
 const uploadsPath = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
-app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads', express.static(uploadsPath, {
+  setHeaders: (res) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+}));
 
 // Rutas API
 app.use('/api/auth', authController);
