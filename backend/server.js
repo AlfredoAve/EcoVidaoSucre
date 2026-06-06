@@ -113,7 +113,7 @@ app.get('/robots.txt', (req, res) => {
 const contactoController = require('./src/controllers/contactoController');
 app.use('/api/contacto', contactoController);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || (process.env.RENDER ? 10000 : 3001);
 
 // Handler 404 — debe ir al final, después de todas las rutas
 app.use((req, res) => {
