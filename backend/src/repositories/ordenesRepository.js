@@ -263,7 +263,7 @@ class OrdenesRepository {
           COUNT(*) as totalOrdenes,
           SUM(CASE WHEN estadoPago = 'pagado' THEN total ELSE 0 END) as ingresoTotal,
           COUNT(CASE WHEN estado = 'completada' THEN 1 END) as completadas,
-          COUNT(CASE WHEN estado = 'pendiente' THEN 1 END) as pendientes
+          COUNT(CASE WHEN estado IN ('pendiente', 'confirmada', 'entregado') THEN 1 END) as pendientes
         FROM ordenes
         WHERE estado != 'pago_pendiente'
       `, (err, row) => {

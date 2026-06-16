@@ -53,11 +53,19 @@ router.post('/crear-orden', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Carrito vacío' });
     }
 
+    const productos = [];
     for (const item of items) {
       const producto = await ProductosRepository.obtenerPorId(item.productoId);
       if (!producto || producto.stock < item.cantidad) {
         return res.status(400).json({ error: `Stock insuficiente para ${item.nombre}` });
       }
+      productos.push({
+        productoId: item.productoId,
+        nombre: item.nombre || producto.nombre,
+        cantidad: item.cantidad,
+        precio: item.precioUnitario ?? producto.precio,
+        imagen: producto.imagen || item.imagen || ''
+      });
     }
 
     const totalRealBs = calcularTotal(items);
@@ -71,13 +79,6 @@ router.post('/crear-orden', authMiddleware, async (req, res) => {
     if (!ordenPaypal.id) {
       return res.status(500).json({ error: 'Error al crear orden en PayPal', detalle: ordenPaypal });
     }
-
-    const productos = items.map(item => ({
-      productoId: item.productoId,
-      nombre: item.nombre,
-      cantidad: item.cantidad,
-      precio: item.precioUnitario
-    }));
 
     // Guardar una foto exacta del carrito antes de abrir PayPal.
     const ordenLocal = new Orden(
@@ -206,7 +207,7 @@ router.post('/capturar-orden', authMiddleware, async (req, res) => {
       };
       const logoPath = path.join(__dirname, '../../../frontend/images/logo.png');
       generarFacturaPDF({
-        orden: { ...ordenCreada, id: orden.id, fecha: new Date().toISOString() },
+        orden: { ...ordenCreada, id: orden.id, fecha: ordenCreada.fechaPago || ordenCreada.fechaCreacion },
         usuario: usuarioData,
         productos,
         metodoPago: 'PayPal',

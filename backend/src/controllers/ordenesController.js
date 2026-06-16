@@ -47,11 +47,30 @@ async function notificarEstado(orden, estado) {
   });
 }
 
+async function agregarImagenesAOrden(orden) {
+  const productos = await Promise.all((orden.productos || []).map(async (item) => {
+    if (item.imagen) return item;
+
+    const productoDb = await ProductosRepository.obtenerPorId(item.productoId);
+
+    return {
+      ...item,
+      imagen: productoDb?.imagen || ''
+    };
+  }));
+
+  return {
+    ...orden,
+    productos
+  };
+}
+
 // GET /api/ordenes - Historial de órdenes del usuario
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const ordenes = await OrdenesRepository.obtenerPorUsuario(req.usuario.id);
-    res.json(ordenes);
+    const ordenesConImagen = await Promise.all(ordenes.map(agregarImagenesAOrden));
+    res.json(ordenesConImagen);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -61,7 +80,8 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/admin/todas', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const ordenes = await OrdenesRepository.obtenerTodas();
-    res.json(ordenes);
+    const ordenesConImagen = await Promise.all(ordenes.map(agregarImagenesAOrden));
+    res.json(ordenesConImagen);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -124,8 +144,9 @@ router.get('/:id', authMiddleware, async (req, res) => {
     if (req.usuario.id !== orden.usuarioId && req.usuario.rol !== 'admin') {
       return res.status(403).json({ error: 'No tienes permiso para ver esta orden' });
     }
+    const ordenConImagen = await agregarImagenesAOrden(orden);
     const historial = await OrdenesRepository.obtenerHistorial(orden.id);
-    res.json({ ...orden, historial });
+    res.json({ ...ordenConImagen, historial });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -162,7 +183,7 @@ router.get('/:id/factura', authMiddleware, async (req, res) => {
     const logoPath = path.join(__dirname, '../../../frontend/images/logo.png');
 
     await generarFacturaPDF({
-      orden: { ...orden, id: orden.id, fecha: orden.fechaCreacion },
+      orden: { ...orden, id: orden.id, fecha: orden.fechaPago || orden.fechaCreacion },
       usuario,
       productos: orden.productos || [],
       metodoPago: orden.metodoPago || 'No especificado',

@@ -71,6 +71,32 @@ class NotificacionesRepository {
       });
     });
   }
+
+  static eliminar(id, usuarioId) {
+    return new Promise((resolve, reject) => {
+      const db = getDB();
+      db.run(`
+        DELETE FROM notificaciones
+        WHERE id = ? AND usuarioId = ?
+      `, [id, usuarioId], function(err) {
+        if (err) reject(err);
+        else resolve(this.changes > 0);
+      });
+    });
+  }
+
+  static eliminarTodas(usuarioId) {
+    return new Promise((resolve, reject) => {
+      const db = getDB();
+      db.run(`
+        DELETE FROM notificaciones
+        WHERE usuarioId = ?
+      `, [usuarioId], function(err) {
+        if (err) reject(err);
+        else resolve(this.changes);
+      });
+    });
+  }
 }
 
 module.exports = NotificacionesRepository;

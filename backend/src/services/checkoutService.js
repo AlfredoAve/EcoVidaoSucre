@@ -30,12 +30,20 @@ class CheckoutService {
       throw new Error('El carrito está vacío');
     }
 
-    // Validar stock disponible
+    // Validar stock disponible y preparar productos con imagen
+    const productos = [];
     for (const item of items) {
       const producto = await ProductosRepository.obtenerPorId(item.productoId);
       if (!producto || producto.stock < item.cantidad) {
         throw new Error(`Stock insuficiente para ${item.nombre}`);
       }
+      productos.push({
+        productoId: item.productoId,
+        nombre: item.nombre || producto.nombre,
+        cantidad: item.cantidad,
+        precio: item.precioUnitario ?? producto.precio,
+        imagen: producto.imagen || item.imagen || ''
+      });
     }
 
     // Calcular total
@@ -43,12 +51,6 @@ class CheckoutService {
 
     // Crear orden
     const Orden = require('../models/Orden');
-    const productos = items.map(item => ({
-      productoId: item.productoId,
-      nombre: item.nombre,
-      cantidad: item.cantidad,
-      precio: item.precioUnitario
-    }));
 
     const orden = new Orden(usuarioId, productos, total, direccionEnvio);
     const ordenId = await OrdenesRepository.crearOrden(orden);

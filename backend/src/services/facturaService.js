@@ -2,20 +2,36 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
+const BOLIVIA_TZ = 'America/La_Paz';
+
+function parseStoredDate(value) {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (typeof value !== 'string') return new Date(value);
+  const trimmed = value.trim();
+  if (!trimmed) return new Date();
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(trimmed)) return new Date(trimmed);
+  if (trimmed.includes('T')) return new Date(`${trimmed}Z`);
+  return new Date(`${trimmed.replace(' ', 'T')}Z`);
+}
+
+function getBoliviaYear(date) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: BOLIVIA_TZ,
+    year: 'numeric'
+  }).format(date);
+}
+
 function generarFacturaPDF({ orden, usuario, productos, metodoPago, logoPath }) {
   return new Promise((resolve, reject) => {
     const filenameId  = `F-${orden.id.toString().padStart(6, '0')}`;
     // Si la fecha viene de SQLite (ej. '2026-06-02 01:40:50') y no tiene 'Z', JS puede asumirla local y desfasarla.
     // Añadimos 'Z' para forzar que sea parseada como UTC (que es como SQLite la guarda por defecto).
-    let rawDateStr = orden.fecha;
-    if (typeof rawDateStr === 'string' && !rawDateStr.endsWith('Z') && !rawDateStr.includes('T')) {
-      rawDateStr = rawDateStr.replace(' ', 'T') + 'Z';
-    }
-    const fechaObj    = new Date(rawDateStr);
-    const currentYear = fechaObj.getFullYear();
+    const fechaObj    = parseStoredDate(orden.fecha || orden.fechaPago || orden.fechaCreacion);
+    const currentYear = getBoliviaYear(fechaObj);
     const formattedId = `ECO-${currentYear}-${orden.id.toString().padStart(8, '0')}`;
-    const fecha = fechaObj.toLocaleDateString('es-BO', { timeZone: 'America/La_Paz', year:'numeric', month:'long', day:'2-digit' });
-    const hora  = fechaObj.toLocaleTimeString('es-BO', { timeZone: 'America/La_Paz', hour:'2-digit', minute:'2-digit' });
+    const fecha = fechaObj.toLocaleDateString('es-BO', { timeZone: BOLIVIA_TZ, year:'numeric', month:'long', day:'2-digit' });
+    const hora  = fechaObj.toLocaleTimeString('es-BO', { timeZone: BOLIVIA_TZ, hour:'2-digit', minute:'2-digit' });
 
     const pdfDir  = path.join(__dirname, '../../facturas');
     if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
