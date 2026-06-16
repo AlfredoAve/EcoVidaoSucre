@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const sharp = require('sharp');
 const ProductosRepository = require('../repositories/productosRepository');
 const Producto = require('../models/Producto');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -56,6 +57,28 @@ function errorDatosProducto(datos, requiereTodos = false) {
   return null;
 }
 
+function eliminarImagenUpload(imagen) {
+  if (!imagen || !imagen.includes('/uploads/')) return;
+
+  const uploadsDir = path.resolve(__dirname, '../../uploads');
+  const nombre = path.basename(imagen);
+  const parsed = path.parse(nombre);
+  const candidatos = [
+    nombre,
+    `${parsed.name}.webp`,
+    `${parsed.name}.jpg`,
+    `${parsed.name}.jpeg`,
+    `${parsed.name}.png`,
+  ];
+
+  [...new Set(candidatos)].forEach(archivo => {
+    const imagenPath = path.resolve(uploadsDir, archivo);
+    if (imagenPath.startsWith(uploadsDir) && fs.existsSync(imagenPath)) {
+      fs.unlinkSync(imagenPath);
+    }
+  });
+}
+
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -73,7 +96,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype && file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -83,9 +106,40 @@ const upload = multer({
   }
 });
 
+async function optimizarImagenSubida(file) {
+  const originalPath = path.resolve(file.path);
+  const parsed = path.parse(file.filename);
+  const optimizedName = `${parsed.name}.webp`;
+  const optimizedPath = path.resolve(uploadDir, optimizedName);
+
+  if (!originalPath.startsWith(path.resolve(uploadDir)) || !optimizedPath.startsWith(path.resolve(uploadDir))) {
+    throw new Error('Ruta de imagen invalida');
+  }
+
+  await sharp(originalPath)
+    .rotate()
+    .resize({
+      width: 1200,
+      height: 1200,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .webp({
+      quality: 82,
+      effort: 4,
+    })
+    .toFile(optimizedPath);
+
+  if (originalPath !== optimizedPath && fs.existsSync(originalPath)) {
+    fs.unlinkSync(originalPath);
+  }
+
+  return optimizedName;
+}
+
 // POST /api/admin/upload - Subir imagen
 router.post('/upload', (req, res) => {
-  upload.single('imagen')(req, res, (err) => {
+  upload.single('imagen')(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ error: err.message || 'Error al subir imagen' });
     }
@@ -94,7 +148,15 @@ router.post('/upload', (req, res) => {
       return res.status(400).json({ error: 'Archivo requerido' });
     }
 
-    res.json({ exito: true, url: `/uploads/${req.file.filename}` });
+    try {
+      const optimizedName = await optimizarImagenSubida(req.file);
+      res.json({ exito: true, url: `/uploads/${optimizedName}` });
+    } catch (error) {
+      if (req.file?.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ error: 'No se pudo optimizar la imagen' });
+    }
   });
 });
 
@@ -180,13 +242,7 @@ router.delete('/productos/:id/definitivo', async (req, res) => {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    if (producto.imagen && producto.imagen.includes('/uploads/')) {
-      const uploadsDir = path.resolve(__dirname, '../../uploads');
-      const imagenPath = path.resolve(uploadsDir, path.basename(producto.imagen));
-      if (imagenPath.startsWith(uploadsDir) && fs.existsSync(imagenPath)) {
-        fs.unlinkSync(imagenPath);
-      }
-    }
+    eliminarImagenUpload(producto.imagen);
 
     res.json({ exito: true, mensaje: 'Producto eliminado definitivamente' });
   } catch (error) {

@@ -70,6 +70,31 @@ app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 const fs = require('fs');
 const uploadsPath = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
+app.get('/uploads/:filename', (req, res, next) => {
+  const requested = path.basename(req.params.filename);
+  const parsed = path.parse(requested);
+  const webpName = `${parsed.name}.webp`;
+  const webpPath = path.join(uploadsPath, webpName);
+  const jpgName = `${parsed.name}.jpg`;
+  const jpgPath = path.join(uploadsPath, jpgName);
+  const requestExt = parsed.ext.toLowerCase();
+
+  if (['.png', '.jpg', '.jpeg'].includes(requestExt) && fs.existsSync(webpPath)) {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.type('webp');
+    return res.sendFile(webpPath);
+  }
+
+  if (requestExt === '.png' && fs.existsSync(jpgPath)) {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.type('jpg');
+    return res.sendFile(jpgPath);
+  }
+
+  return next();
+});
 app.use('/uploads', express.static(uploadsPath, {
   setHeaders: (res) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
