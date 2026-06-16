@@ -256,9 +256,10 @@ class APIService {
     const blob = await res.blob();
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const year = new Date().getFullYear();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
     a.href = blobUrl;
-    a.download = `ECO-${year}-${String(id).padStart(8,'0')}.pdf`;
+    a.download = filenameMatch ? filenameMatch[1] : `F-${String(id).padStart(6, '0')}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -346,6 +347,22 @@ class APIService {
   static async marcarTodasNotificacionesLeidas() {
     const res = await fetch(`${API_BASE}/notificaciones/leer-todas`, {
       method: 'PUT',
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async eliminarNotificacion(id) {
+    const res = await fetch(`${API_BASE}/notificaciones/${id}`, {
+      method: 'DELETE',
+      headers: this.getHeaders()
+    });
+    return res.json();
+  }
+
+  static async limpiarNotificaciones() {
+    const res = await fetch(`${API_BASE}/notificaciones`, {
+      method: 'DELETE',
       headers: this.getHeaders()
     });
     return res.json();

@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ecovida-demo.com/</loc>
+    <loc>https://eco-vida-sucre.vercel.app/</loc>
     <priority>1.0</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ecovida-demo.com/productos</loc>
+    <loc>https://eco-vida-sucre.vercel.app/productos.html</loc>
     <priority>0.9</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://ecovida-demo.com/categorias</loc>
+    <loc>https://eco-vida-sucre.vercel.app/categorias.html</loc>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ecovida-demo.com/sobre-nosotros</loc>
+    <loc>https://eco-vida-sucre.vercel.app/sobre-nosotros.html</loc>
     <priority>0.7</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://ecovida-demo.com/contacto</loc>
+    <loc>https://eco-vida-sucre.vercel.app/contacto.html</loc>
     <priority>0.7</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://ecovida-demo.com/privacidad</loc>
+    <loc>https://eco-vida-sucre.vercel.app/privacidad.html</loc>
     <priority>0.5</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
-    <loc>https://ecovida-demo.com/terminos</loc>
+    <loc>https://eco-vida-sucre.vercel.app/terminos.html</loc>
     <priority>0.5</priority>
     <changefreq>yearly</changefreq>
   </url>

@@ -5,8 +5,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>EcoVida — Productos 100% Naturales</title>
-<meta content="Tienda online de productos naturales premium: miel, aceites, tés y más. Envío gratis desde 50€." name="description"/>
-<link href="https://ecovida-demo.com/" rel="canonical"/>
+<meta content="Tienda online de productos naturales en Sucre, Bolivia: miel, aceites, tés, suplementos y más para tu bienestar." name="description"/>
+<link href="https://eco-vida-sucre.vercel.app/" rel="canonical"/>
 <!-- Google Analytics 4 -->
 <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-FJ2FEMMR94"></script>
 <script>
@@ -168,6 +168,74 @@
 </div>
 </div>
 </section>
+<!-- Modal de producto destacado -->
+<div aria-hidden="true" aria-labelledby="productTitle" class="modal fade" id="productModal" tabindex="-1" role="dialog">
+<div class="modal-dialog modal-xl modal-dialog-centered">
+<div class="modal-content eco-modal-premium">
+<button aria-label="Cerrar" class="btn-close modal-close-floating" data-bs-dismiss="modal" type="button"></button>
+<div class="modal-body p-0">
+<div class="product-modal-main">
+<div class="modal-image-top">
+<img alt="Imagen del producto seleccionado" id="productImage" src=""/>
+<div class="modal-img-overlay"></div>
+</div>
+<div class="modal-details-content">
+<span class="modal-category-label" id="productCategory"></span>
+<h2 class="modal-product-title" id="productTitle"></h2>
+<div id="productRatingSummary"></div>
+<div class="modal-price-stock">
+<span class="modal-price">Bs <span id="productPrice">0</span></span>
+<div class="stock-info">
+<i class="bi bi-box-seam"></i> Stock disponible: <strong id="productStock">0</strong>
+</div>
+</div>
+<p class="modal-desc" id="productDesc"></p>
+<section class="product-benefits-section" id="productBenefitsSection" style="display:none;">
+<h5 class="product-benefits-title">Beneficios</h5>
+<div class="product-benefits-grid" id="productBenefits"></div>
+</section>
+<div class="purchase-actions">
+<label class="form-label fw-bold text-dark mb-2" for="productQty">Cantidad</label>
+<div class="d-flex gap-3 align-items-end flex-wrap">
+<div class="qty-input-wrap">
+<input class="form-control" id="productQty" min="1" type="number" value="1"/>
+</div>
+<button class="btn btn-success btn-add-cart-modal flex-grow-1" id="addToCartBtn" type="button">
+<i class="bi bi-bag-plus fs-5 me-2"></i> Agregar al Carrito
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="product-modal-reviews">
+<div class="product-reviews-section">
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="reviews-title m-0">Reseñas del Producto</h5>
+<div id="reviewHeaderActions">
+<button class="btn btn-outline-success review-btn-trigger" id="btnShowReviewForm" style="display:none;">Escribir Reseña</button>
+<a class="btn btn-outline-secondary review-btn-trigger" href="login.html" id="btnLoginToReview" style="display:none;"><i class="bi bi-box-arrow-in-right"></i> Inicia sesión para opinar</a>
+</div>
+</div>
+<div class="reviews-list" id="resenaProducto"></div>
+<div class="review-form-wrapper mt-3" id="reviewFormContainer" style="display:none;">
+<div class="review-form-box">
+<h6 class="mb-3 fw-bold text-success">Califica este producto</h6>
+<div class="interactive-stars mb-3" id="starRatingContainer">
+<i class="bi bi-star" data-val="1"></i><i class="bi bi-star" data-val="2"></i><i class="bi bi-star" data-val="3"></i><i class="bi bi-star" data-val="4"></i><i class="bi bi-star" data-val="5"></i>
+</div>
+<textarea class="form-control mb-3" id="reviewComment" placeholder="¿Qué te pareció este producto? Cuéntanos tu experiencia..." rows="3"></textarea>
+<div class="d-flex justify-content-end gap-2">
+<button class="btn btn-outline-secondary btn-sm" id="cancelReviewBtn" type="button">Cancelar</button>
+<button class="btn btn-success btn-sm px-4" id="submitReviewBtn" type="button">Enviar Reseña</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 <!-- Footer -->
 <footer class="site-footer">
 <div class="container">

@@ -1,7 +1,10 @@
 User-agent: *
 Allow: /
-Disallow: /panel-admin
-Disallow: /profile
-Disallow: /carrito
-Disallow: /orden-confirmacion
-Sitemap: https://ecovida-demo.com/sitemap.xml
+Disallow: /panel-admin.html
+Disallow: /profile.html
+Disallow: /carrito.html
+Disallow: /orden-confirmacion.html
+Disallow: /login.html
+Disallow: /register.html
+
+Sitemap: https://eco-vida-sucre.vercel.app/sitemap.xml

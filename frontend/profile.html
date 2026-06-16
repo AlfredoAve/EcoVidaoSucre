@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi perfil | EcoVida</title>
   <meta name="description" content="Gestiona tu cuenta, pedidos y datos personales en EcoVida.">
+  <meta name="robots" content="noindex, nofollow">
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FJ2FEMMR94"></script>
   <script>
@@ -26,7 +27,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="CSS/style.css" rel="stylesheet">
 </head>
-<body class="eco-panel-page">
+<body class="eco-panel-page eco-panel-premium">
   <div id="navbar-container"></div>
   <script src="js/navbarLoader.js"></script>
 
@@ -105,12 +106,12 @@
         <!-- Pestaña: Órdenes -->
         <div class="tab-content" id="ordenes-tab" style="display:none;">
           <div class="profile-card">
-            <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
+            <div class="profile-section-head profile-orders-head d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
               <div>
                 <h4 class="profile-card-title mb-1">Mis Órdenes</h4>
                 <p class="text-muted small mb-0">Sigue el estado de tus compras y confirma cuando recibas tu pedido.</p>
               </div>
-              <a class="btn btn-outline-success btn-sm align-self-md-start" href="productos.html">
+              <a class="btn btn-outline-success btn-sm align-self-md-start profile-shop-btn" href="productos.html">
                 <i class="bi bi-bag-heart"></i> Seguir comprando
               </a>
             </div>
@@ -122,11 +123,16 @@
         <!-- Pestaña: Notificaciones -->
         <div class="tab-content" id="notificaciones-tab" style="display:none;">
           <div class="profile-card">
-            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+            <div class="profile-section-head">
               <h4 class="profile-card-title mb-0">Notificaciones</h4>
-              <button class="btn btn-sm btn-outline-success" id="markAllNotificationsBtn" type="button">
-                Marcar todas como leídas
-              </button>
+              <div class="profile-head-actions">
+                <button class="btn btn-sm btn-outline-success" id="markAllNotificationsBtn" type="button">
+                  <i class="bi bi-check2-circle"></i> Marcar leídas
+                </button>
+                <button class="btn btn-sm btn-outline-danger" id="clearNotificationsBtn" type="button">
+                  <i class="bi bi-trash3"></i> Limpiar
+                </button>
+              </div>
             </div>
             <div id="notificacionesList"></div>
           </div>

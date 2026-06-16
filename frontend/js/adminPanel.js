@@ -76,8 +76,6 @@ function configurarEventos() {
   document.getElementById('productForm')?.addEventListener('submit', guardarProducto);
   document.getElementById('categoryForm')?.addEventListener('submit', guardarCategoria);
   document.getElementById('reloadDbBtn')?.addEventListener('click', cargarBaseDatos);
-  document.getElementById('logoutBtn')?.addEventListener('click', logout);
-
   document.getElementById('genericConfirmActionBtn')?.addEventListener('click', async () => {
     if (!pendingConfirmFn) return;
     bootstrap.Modal.getInstance(document.getElementById('genericConfirmModal'))?.hide();
@@ -155,7 +153,54 @@ function setBtnLoading(btn, loading) {
   }
 }
 
-function renderDashboardInsights() {
+function esActivo(valor) {
+  return valor === 1 || valor === true;
+}
+
+function getEstadoClass(estado = '') {
+  const key = String(estado).toLowerCase();
+  if (key.includes('pend')) return 'is-pending';
+  if (key.includes('confirm')) return 'is-confirmed';
+  if (key.includes('env')) return 'is-shipped';
+  if (key.includes('entreg') || key.includes('complet')) return 'is-done';
+  if (key.includes('cancel')) return 'is-cancelled';
+  return 'is-neutral';
+}
+
+function formatAdminDate(value) {
+  if (!value) return 'sin fecha';
+  const date = parseStoredDate(value);
+  if (Number.isNaN(date.getTime())) return 'sin fecha';
+  return date.toLocaleDateString('es-BO', { timeZone: 'America/La_Paz', day: '2-digit', month: 'short' });
+}
+
+function parseStoredDate(value) {
+  if (!value) return new Date(NaN);
+  if (value instanceof Date) return value;
+  if (typeof value !== 'string') return new Date(value);
+  const trimmed = value.trim();
+  if (!trimmed) return new Date(NaN);
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(trimmed)) return new Date(trimmed);
+  if (trimmed.includes('T')) return new Date(`${trimmed}Z`);
+  return new Date(`${trimmed.replace(' ', 'T')}Z`);
+}
+
+function formatBoliviaDateTime(value) {
+  const date = parseStoredDate(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString('es-BO', {
+    timeZone: 'America/La_Paz',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+}
+
+renderDashboardInsights = function () {
   const lowStockEl = document.getElementById('dashboardLowStock');
   const actionOrdersEl = document.getElementById('dashboardOrdersAction');
   const recentOrdersEl = document.getElementById('dashboardRecentOrders');
@@ -174,11 +219,11 @@ function renderDashboardInsights() {
               <span>${escapeHtml(prod.categoriaNombre || 'Sin categoria')}</span>
             </div>
             <button class="admin-stock-pill ${Number(prod.stock || 0) === 0 ? 'is-empty' : ''}" onclick="abrirEditarProducto(${prod.id})">
-              ${Number(prod.stock || 0)} u.
+              ${Number(prod.stock || 0)} unidades
             </button>
           </div>
         `).join('')
-      : '<div class="admin-empty-state">Todo bien: no hay productos con stock bajo.</div>';
+      : '<div class="admin-empty-state"><i class="bi bi-check2-circle"></i><span>Todo bien: no hay productos con stock bajo.</span></div>';
   }
 
   if (actionOrdersEl) {
@@ -189,46 +234,43 @@ function renderDashboardInsights() {
     };
     const orders = [...todasOrdenes]
       .filter(orden => priority[orden.estado])
-      .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion))
+      .sort((a, b) => parseStoredDate(b.fechaCreacion) - parseStoredDate(a.fechaCreacion))
       .slice(0, 5);
 
     actionOrdersEl.innerHTML = orders.length
       ? orders.map(orden => `
           <div class="admin-insight-row">
             <div>
-              <strong>#${orden.id} · ${escapeHtml(orden.nombre || 'Cliente')}</strong>
-              <span>${priority[orden.estado]} · Bs ${Number(orden.total || 0).toFixed(2)}</span>
+              <strong>Pedido ${orden.id} - ${escapeHtml(orden.nombre || 'Cliente')}</strong>
+              <span>${priority[orden.estado]} - Bs ${Number(orden.total || 0).toFixed(2)}</span>
             </div>
-            <button class="btn btn-sm btn-outline-primary" onclick="verDetalleOrden(${orden.id})">
+            <button class="admin-action-btn" onclick="verDetalleOrden(${orden.id})">
               Ver
             </button>
           </div>
         `).join('')
-      : '<div class="admin-empty-state">No hay pedidos esperando accion en este momento.</div>';
+      : '<div class="admin-empty-state"><i class="bi bi-check2-circle"></i><span>No hay pedidos esperando accion en este momento.</span></div>';
   }
 
   if (recentOrdersEl) {
     const recent = [...todasOrdenes]
-      .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion))
+      .sort((a, b) => parseStoredDate(b.fechaCreacion) - parseStoredDate(a.fechaCreacion))
       .slice(0, 5);
 
     recentOrdersEl.innerHTML = recent.length
       ? `<div class="admin-recent-grid">
           ${recent.map(orden => `
             <button class="admin-recent-order" onclick="verDetalleOrden(${orden.id})">
-              <span>#${orden.id}</span>
+              <span class="admin-recent-id">Pedido ${orden.id}</span>
+              <span class="admin-order-status ${getEstadoClass(orden.estado)}">${escapeHtml(orden.estado || 'pendiente')}</span>
               <strong>${escapeHtml(orden.nombre || 'Cliente')}</strong>
-              <small>${escapeHtml(orden.estado || 'pendiente')} · Bs ${Number(orden.total || 0).toFixed(2)}</small>
+              <small>Bs ${Number(orden.total || 0).toFixed(2)} - ${formatAdminDate(orden.fechaCreacion)}</small>
             </button>
           `).join('')}
         </div>`
-      : '<div class="admin-empty-state">Aun no hay ordenes registradas.</div>';
+      : '<div class="admin-empty-state"><i class="bi bi-inbox"></i><span>Aun no hay ordenes registradas.</span></div>';
   }
-}
-
-function esActivo(valor) {
-  return valor === 1 || valor === true;
-}
+};
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -725,7 +767,7 @@ function renderTablaBaseOrdenes() {
 
   tbody.innerHTML = ordenesDB.map(orden => {
     const eliminable = orden.estado !== 'enviado';
-    const fecha = orden.fechaCreacion ? new Date(orden.fechaCreacion).toLocaleString('es-ES') : '-';
+    const fecha = formatBoliviaDateTime(orden.fechaCreacion);
     return `
       <tr>
         <td>#${orden.id}</td>
@@ -854,7 +896,7 @@ function renderizarTablaOrdenes() {
       cancelada: 'cancelada'
     };
     const clsBadge      = badges[orden.estado] || 'bg-warning text-dark';
-    const fecha         = new Date(orden.fechaCreacion).toLocaleString('es-ES');
+    const fecha         = formatBoliviaDateTime(orden.fechaCreacion);
     const esConfirmable = orden.estado === 'pendiente';
     const esEnviable    = orden.estado === 'confirmada';
     const esCompletable = orden.estado === 'entregado';
@@ -938,7 +980,7 @@ async function verDetalleOrden(ordenId) {
   document.getElementById('orderDetailHistory').innerHTML = (orden.historial || []).map(item => `
     <div class="order-history-item">
       <strong>${escapeHtml(item.estadoNuevo || '')}</strong>
-      <small>${new Date(item.fechaCreacion).toLocaleString('es-ES')} · ${escapeHtml(item.actorNombre || item.actorRol || 'Sistema')}</small>
+      <small>${formatBoliviaDateTime(item.fechaCreacion)} · ${escapeHtml(item.actorNombre || item.actorRol || 'Sistema')}</small>
       ${item.nota ? `<span>${escapeHtml(item.nota)}</span>` : ''}
     </div>
   `).join('') || '<p class="text-muted small mb-0">Sin historial disponible.</p>';
@@ -1166,7 +1208,7 @@ async function cargarMensajes() {
         <td><a href="mailto:${escapeHtml(m.email)}">${escapeHtml(m.email)}</a></td>
         <td>${escapeHtml(m.asunto)}</td>
         <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(m.mensaje)}">${escapeHtml(m.mensaje)}</td>
-        <td><small>${new Date(m.fechaCreacion).toLocaleString('es-ES')}</small></td>
+        <td><small>${formatBoliviaDateTime(m.fechaCreacion)}</small></td>
       </tr>`).join('');
   } catch (e) {
     console.error('Error cargando mensajes:', e);

@@ -126,16 +126,16 @@ function actualizarNavegacion() {
 
     if (isAdmin) {
       htmlDesktop = `
-        <a href="panel-admin.html" class="btn btn-outline-warning ecovida-user-btn" aria-label="Panel admin">
-          <i data-lucide="settings"></i>
+        <a href="panel-admin.html" class="btn btn-outline-success ecovida-user-btn eco-admin-main-btn" aria-label="Panel admin">
+          <i data-lucide="shield-check"></i><span>Admin</span>
         </a>
         <button onclick="logout()" class="btn btn-outline-danger ecovida-user-btn ms-1" aria-label="Cerrar sesión">
           <i data-lucide="log-out"></i>
         </button>
       `;
       htmlMobile = `
-        <a href="panel-admin.html" class="btn btn-warning rounded-pill mb-2">
-          <i class="bi bi-gear"></i> Panel Admin
+        <a href="panel-admin.html" class="btn btn-outline-success rounded-pill mb-2">
+          <i class="bi bi-shield-check"></i> Panel Admin
         </a>
         <button onclick="logout()" class="btn btn-outline-danger rounded-pill">
           <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
@@ -211,7 +211,7 @@ function actualizarNavegacionCuenta() {
     const htmlDesktop = `
       <div class="eco-account-menu" id="accountMenu">
         <button class="eco-account-trigger" id="accountMenuToggle" type="button" aria-label="Abrir menu de cuenta" aria-expanded="false">
-          <i data-lucide="${panelInfo.isAdmin ? 'settings' : 'user'}"></i>
+          <i data-lucide="${panelInfo.isAdmin ? 'shield-check' : 'user'}"></i>
           <span class="eco-account-trigger-text">Mi cuenta</span>
           <span id="notificationCount" class="eco-account-badge" style="display:none;">0</span>
         </button>
