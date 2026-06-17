@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Categorías | EcoVida — Productos Naturales</title>
+<title>Categorías | EcoVida ? Productos Naturales</title>
 <meta content="Explora todas las categorías de productos naturales en EcoVida: miel, aceites, tés, superalimentos y más." name="description"/>
 <link href="https://eco-vida-sucre.vercel.app/categorias.html" rel="canonical"/>
 <!-- Google Analytics 4 -->
@@ -15,9 +15,9 @@
     gtag('js', new Date());
     gtag('config', 'G-FJ2FEMMR94');
   </script>
-<!-- Search Console — activar cuando se verifique -->
+<!-- Search Console ? activar cuando se verifique -->
 <!-- <meta name="google-site-verification" content="PENDIENTE_CODIGO_VERIFICACION"/> -->
-<!-- Meta Pixel — activar cuando se tenga el ID -->
+<!-- Meta Pixel ? activar cuando se tenga el ID -->
 <!--
   <script>
     fbq('init', 'PENDIENTE_PIXEL_ID');
@@ -45,9 +45,18 @@
 <section class="py-5">
 <div class="container">
 <!-- Estado cargando -->
-<div class="text-center py-5" id="categoriasLoading">
-<div class="spinner-border text-success" role="status">
-<span class="visually-hidden">Cargando categorías...</span>
+<div class="row g-4" id="categoriasLoading">
+<div class="col-sm-6 col-md-4 col-lg-3">
+<div class="skeleton-category-card"><div class="skeleton-media"></div><div class="skeleton-body"><div class="skeleton-line is-title mx-auto"></div><div class="skeleton-line is-short mx-auto"></div></div></div>
+</div>
+<div class="col-sm-6 col-md-4 col-lg-3">
+<div class="skeleton-category-card"><div class="skeleton-media"></div><div class="skeleton-body"><div class="skeleton-line is-title mx-auto"></div><div class="skeleton-line is-short mx-auto"></div></div></div>
+</div>
+<div class="col-sm-6 col-md-4 col-lg-3">
+<div class="skeleton-category-card"><div class="skeleton-media"></div><div class="skeleton-body"><div class="skeleton-line is-title mx-auto"></div><div class="skeleton-line is-short mx-auto"></div></div></div>
+</div>
+<div class="col-sm-6 col-md-4 col-lg-3">
+<div class="skeleton-category-card"><div class="skeleton-media"></div><div class="skeleton-body"><div class="skeleton-line is-title mx-auto"></div><div class="skeleton-line is-short mx-auto"></div></div></div>
 </div>
 </div>
 <!-- Error -->
@@ -65,7 +74,7 @@
 <div class="row g-5">
 <div class="col-lg-4 col-md-6">
 <div class="mb-3">
-<img alt="EcoVida logotipo" class="footer-logo" src="images/logo.png"/>
+<img alt="EcoVida logotipo" class="footer-logo" src="images/logo.png" width="72" height="72" loading="lazy" decoding="async">
 </div>
 <p class="footer-text mb-3">Tu tienda confiable de productos naturales y orgánicos para una vida más saludable.</p>
 <div class="social-links">
@@ -109,7 +118,7 @@
 <hr class="footer-divider"/>
 <div class="row">
 <div class="col-12 text-center">
-<p class="footer-copyright mb-0">© 2025 EcoVida. Todos los derechos reservados.</p>
+<p class="footer-copyright mb-0">? 2025 EcoVida. Todos los derechos reservados.</p>
 </div>
 </div>
 </div>
@@ -136,7 +145,7 @@
 
         categorias.forEach(cat => {
           const imgSrc = APIService.getImageUrl(cat.imagen);
-          const imgAlt = `Categoría ${cat.nombre} — productos naturales EcoVida`;
+          const imgAlt = `Categoría ${cat.nombre} ? productos naturales EcoVida`;
           const col = document.createElement('div');
           col.className = 'col-sm-6 col-md-4 col-lg-3';
           col.innerHTML = `
@@ -144,6 +153,11 @@
                class="card h-100 text-decoration-none category-card eco-category-card">
                   <img src="${imgSrc}" alt="${imgAlt}"
                     class="card-img-top"
+                    loading="lazy"
+                    decoding="async"
+                    width="900"
+                    height="507"
+                    sizes="(max-width: 575px) calc(100vw - 32px), (max-width: 767px) 50vw, (max-width: 991px) 33vw, 25vw"
                     onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
               ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#ff9800;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
               <div class="card-body text-center">

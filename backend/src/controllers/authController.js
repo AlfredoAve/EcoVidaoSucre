@@ -35,6 +35,22 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/google
+router.post('/google', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ error: 'Token de Google requerido' });
+    }
+
+    const resultado = await AuthService.loginConFirebase(idToken);
+    res.json(resultado);
+  } catch (error) {
+    res.status(401).json({ error: error.message });
+  }
+});
+
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
   // En JWT, el logout se maneja en el cliente eliminando el token

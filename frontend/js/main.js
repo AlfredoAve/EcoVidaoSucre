@@ -5,6 +5,42 @@ let favoritosIdsHome = new Set();
 let productoSeleccionadoHome = null;
 let bootstrapHomeUnavailable = false;
 
+function renderHomeProductSkeletons(count = 4) {
+  return Array.from({ length: count }, () => `
+    <div class="col-12 col-md-4 col-lg-3">
+      <div class="skeleton-card" aria-hidden="true">
+        <div class="skeleton-media"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line is-short"></div>
+          <div class="skeleton-line is-title"></div>
+          <div class="skeleton-row">
+            <div class="skeleton-line is-price"></div>
+            <div class="skeleton-pill"></div>
+          </div>
+          <div class="skeleton-actions">
+            <div class="skeleton-button"></div>
+            <div class="skeleton-button"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderHomeCategorySkeletons(count = 4) {
+  return Array.from({ length: count }, () => `
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="skeleton-category-card" aria-hidden="true">
+        <div class="skeleton-media"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line is-title mx-auto"></div>
+          <div class="skeleton-line is-short mx-auto"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
 async function ensureBootstrapHome() {
   if (window.bootstrap?.Modal) return true;
   if (bootstrapHomeUnavailable) return false;
@@ -150,6 +186,7 @@ async function cargarCategorias() {
   if (!container) return;
 
   try {
+    container.innerHTML = renderHomeCategorySkeletons();
     const categorias = await APIService.obtenerCategorias();
 
     if (!categorias || categorias.length === 0) {
@@ -167,8 +204,10 @@ async function cargarCategorias() {
                  style="height:160px;object-fit:cover;"
                  alt="${escapeHtml(cat.nombre)}"
                  loading="lazy"
-                 width="400"
-                 height="220"
+                 decoding="async"
+                 width="900"
+                 height="507"
+                 sizes="(max-width: 575px) calc(100vw - 32px), (max-width: 767px) 50vw, (max-width: 991px) 33vw, 25vw"
                  onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             ${cat.productosCount === 0 ? '<span style="position:absolute;top:8px;right:8px;background:#1b4332;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;z-index:1;">Próximamente</span>' : ''}
             <div class="card-body text-center" style="padding:12px;">
@@ -193,6 +232,7 @@ async function cargarProductosDestacados() {
   if (!container) return;
 
   try {
+    container.innerHTML = renderHomeProductSkeletons();
     const data = await APIService.obtenerProductos(1, 100, '', '', true);
     // [NUEVO] Extraer productos si la respuesta es paginada
     const productos = data.productos ? data.productos : data;
@@ -215,8 +255,10 @@ async function cargarProductosDestacados() {
                    class="card-img-top eco-card-img"
                    alt="${escapeHtml(prod.nombre)}"
                    loading="lazy"
-                   width="400"
-                   height="220"
+                   decoding="async"
+                   width="900"
+                   height="495"
+                   sizes="(max-width: 767px) calc(100vw - 32px), (max-width: 991px) 50vw, 25vw"
                    onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
               <button class="fav-btn ${esFavorito ? 'active' : ''}" type="button" data-product-id="${prod.id}" aria-label="Favorito">
                 <i class="bi ${esFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i>

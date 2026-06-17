@@ -15,56 +15,67 @@ document.addEventListener('DOMContentLoaded', () => {
 async function handleLogin(e) {
   e.preventDefault();
 
-  const email = document.getElementById('email').value;
+  const emailInput = document.getElementById('email');
+  const email = emailInput.value.trim().toLowerCase();
   const contrasena = document.getElementById('contrasena').value;
   const errorAlert = document.getElementById('errorAlert');
+
+  clearAuthAlert(errorAlert);
+
+  if (!isValidEmail(email)) {
+    showAuthAlert(errorAlert, 'Escribe un correo valido. Ejemplo: nombre@gmail.com');
+    emailInput.focus();
+    return;
+  }
 
   try {
     const resultado = await APIService.login(email, contrasena);
 
     if (resultado.error) {
-      errorAlert.textContent = resultado.error;
-      errorAlert.style.display = 'block';
+      showAuthAlert(errorAlert, resultado.error);
       return;
     }
 
-    // Guardar token
     APIService.setToken(resultado.token);
-
-    // Guardar datos del usuario
     localStorage.setItem('usuario', JSON.stringify(resultado.usuario));
 
-    // Redirigir según el rol
     if (resultado.usuario.rol === 'admin') {
       window.location.href = 'panel-admin.html';
     } else {
       window.location.href = 'index.html';
     }
   } catch (error) {
-    errorAlert.textContent = 'Error al iniciar sesión';
-    errorAlert.style.display = 'block';
+    showAuthAlert(errorAlert, 'Error al iniciar sesion');
   }
 }
 
 async function handleRegister(e) {
   e.preventDefault();
 
-  const nombre = document.getElementById('nombre').value;
-  const email = document.getElementById('email').value;
+  const nombre = document.getElementById('nombre').value.trim();
+  const emailInput = document.getElementById('email');
+  const email = emailInput.value.trim().toLowerCase();
   const contrasena = document.getElementById('contrasena').value;
   const confirmar = document.getElementById('confirmar').value;
   const errorAlert = document.getElementById('errorAlert');
   const successAlert = document.getElementById('successAlert');
 
+  clearAuthAlert(errorAlert);
+  clearAuthAlert(successAlert);
+
+  if (!isValidEmail(email)) {
+    showAuthAlert(errorAlert, 'Escribe un correo valido. Ejemplo: nombre@gmail.com');
+    emailInput.focus();
+    return;
+  }
+
   if (contrasena.length < 6) {
-    errorAlert.textContent = 'La contraseña debe tener al menos 6 caracteres';
-    errorAlert.style.display = 'block';
+    showAuthAlert(errorAlert, 'La contrasena debe tener al menos 6 caracteres');
     return;
   }
 
   if (contrasena !== confirmar) {
-    errorAlert.textContent = 'Las contraseñas no coinciden';
-    errorAlert.style.display = 'block';
+    showAuthAlert(errorAlert, 'Las contrasenas no coinciden');
     return;
   }
 
@@ -72,21 +83,37 @@ async function handleRegister(e) {
     const resultado = await APIService.register(nombre, email, contrasena);
 
     if (resultado.error) {
-      errorAlert.textContent = resultado.error;
-      errorAlert.style.display = 'block';
+      showAuthAlert(errorAlert, resultado.error);
       return;
     }
 
-    successAlert.textContent = 'Cuenta creada exitosamente. Redirigiendo...';
-    successAlert.style.display = 'block';
+    showAuthAlert(successAlert, 'Cuenta creada exitosamente. Redirigiendo...');
 
     setTimeout(() => {
       window.location.href = 'login.html';
     }, 2000);
   } catch (error) {
-    errorAlert.textContent = 'Error al crear la cuenta';
-    errorAlert.style.display = 'block';
+    showAuthAlert(errorAlert, 'Error al crear la cuenta');
   }
+}
+
+function isValidEmail(email) {
+  if (!email || email.length > 254) return false;
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  return emailPattern.test(email);
+}
+
+function showAuthAlert(alertElement, message) {
+  if (!alertElement) return;
+  alertElement.textContent = message;
+  alertElement.style.display = 'block';
+}
+
+function clearAuthAlert(alertElement) {
+  if (!alertElement) return;
+  alertElement.textContent = '';
+  alertElement.style.display = 'none';
 }
 
 // logout() definido en header.js

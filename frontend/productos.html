@@ -1,9 +1,9 @@
-﻿﻿<!DOCTYPE html>
+?<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tienda | EcoVida — Productos Naturales</title>
+  <title>Tienda | EcoVida ? Productos Naturales</title>
   <meta name="description" content="Compra productos naturales premium: miel pura, aceites esenciales, tés orgánicos y más.">
   <link href="https://eco-vida-sucre.vercel.app/productos.html" rel="canonical">
   <!-- Google Analytics 4 -->
@@ -14,9 +14,9 @@
     gtag('js', new Date());
     gtag('config', 'G-FJ2FEMMR94');
   </script>
-  <!-- Search Console — activar cuando se verifique -->
+  <!-- Search Console ? activar cuando se verifique -->
   <!-- <meta name="google-site-verification" content="PENDIENTE_CODIGO_VERIFICACION"/> -->
-  <!-- Meta Pixel — activar cuando se tenga el ID -->
+  <!-- Meta Pixel ? activar cuando se tenga el ID -->
   <!--
   <script>
     fbq('init', 'PENDIENTE_PIXEL_ID');
@@ -57,9 +57,10 @@
         </div>
         <div class="filters-chips-scroll" aria-label="Categorías disponibles">
           <div class="filters-chips" id="categoriesList" role="group" aria-label="Filtrar por categoría">
-            <div class="spinner-border spinner-border-sm text-success" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
+            <span class="skeleton-chip"></span>
+            <span class="skeleton-chip"></span>
+            <span class="skeleton-chip"></span>
+            <span class="skeleton-chip"></span>
           </div>
         </div>
       </div>
@@ -89,9 +90,48 @@
 
     <!-- Lista de productos -->
     <div class="row g-4" id="productsList">
-      <div class="col-12 text-center">
-        <div class="spinner-border text-success" role="status">
-          <span class="visually-hidden">Cargando productos...</span>
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line is-short"></div>
+            <div class="skeleton-line is-title"></div>
+            <div class="skeleton-row"><div class="skeleton-line is-price"></div><div class="skeleton-pill"></div></div>
+            <div class="skeleton-actions"><div class="skeleton-button"></div><div class="skeleton-button"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line is-short"></div>
+            <div class="skeleton-line is-title"></div>
+            <div class="skeleton-row"><div class="skeleton-line is-price"></div><div class="skeleton-pill"></div></div>
+            <div class="skeleton-actions"><div class="skeleton-button"></div><div class="skeleton-button"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line is-short"></div>
+            <div class="skeleton-line is-title"></div>
+            <div class="skeleton-row"><div class="skeleton-line is-price"></div><div class="skeleton-pill"></div></div>
+            <div class="skeleton-actions"><div class="skeleton-button"></div><div class="skeleton-button"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4 col-lg-3">
+        <div class="skeleton-card">
+          <div class="skeleton-media"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line is-short"></div>
+            <div class="skeleton-line is-title"></div>
+            <div class="skeleton-row"><div class="skeleton-line is-price"></div><div class="skeleton-pill"></div></div>
+            <div class="skeleton-actions"><div class="skeleton-button"></div><div class="skeleton-button"></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -113,7 +153,7 @@
         <div class="modal-body p-0">
           <div class="product-modal-main">
             <div class="modal-image-top">
-              <img alt="Imagen del producto seleccionado" id="productImage" src="">
+              <img alt="Imagen del producto seleccionado" id="productImage" src="" width="900" height="495" sizes="(max-width: 575px) calc(100vw - 48px), 520px">
               <div class="modal-img-overlay"></div>
             </div>
             <div class="modal-details-content">
@@ -188,7 +228,7 @@
       <div class="row g-5">
         <div class="col-lg-4 col-md-6">
           <div class="mb-3">
-            <img alt="EcoVida logotipo" class="footer-logo" src="images/logo.png">
+            <img alt="EcoVida logotipo" class="footer-logo" src="images/logo.png" width="72" height="72" loading="lazy" decoding="async">
           </div>
           <p class="footer-text mb-3">Tu tienda confiable de productos naturales y orgánicos para una vida más saludable.</p>
           <div class="social-links">

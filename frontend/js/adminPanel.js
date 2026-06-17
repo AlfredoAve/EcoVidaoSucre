@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('adminName').textContent = usuario.nombre;
+  renderAdminDashboardSkeletons();
 
   await Promise.all([
     cargarCategorias(),
@@ -200,6 +201,59 @@ function formatBoliviaDateTime(value) {
   });
 }
 
+function adminSkeletonLine(size = 'md') {
+  return `<span class="panel-skeleton-block is-${size}" aria-hidden="true"></span>`;
+}
+
+function renderAdminTableSkeletonRows(columns, rows = 4) {
+  const cells = Array.from({ length: columns }, (_, index) => {
+    const size = index === 0 ? 'md' : index === columns - 1 ? 'sm' : 'lg';
+    return `<td>${adminSkeletonLine(size)}</td>`;
+  }).join('');
+
+  return Array.from({ length: rows }, () => `
+    <tr class="panel-skeleton-table-row" aria-hidden="true">
+      ${cells}
+    </tr>
+  `).join('');
+}
+
+function setAdminStatsLoading(isLoading) {
+  ['totalOrdenes', 'ingresoTotal', 'completadas', 'pendientes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('panel-skeleton-value', isLoading);
+    if (isLoading) el.textContent = '';
+  });
+}
+
+function renderAdminInsightSkeleton(targetId, rows = 3) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  target.innerHTML = `
+    <div class="panel-skeleton-list" aria-hidden="true">
+      ${Array.from({ length: rows }, () => `
+        <article class="panel-skeleton-card">
+          <div class="panel-skeleton-row">
+            <div class="panel-skeleton-main">
+              ${adminSkeletonLine('lg')}
+              ${adminSkeletonLine('md')}
+            </div>
+            ${adminSkeletonLine('button')}
+          </div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderAdminDashboardSkeletons() {
+  setAdminStatsLoading(true);
+  renderAdminInsightSkeleton('dashboardOrdersAction', 4);
+  renderAdminInsightSkeleton('dashboardLowStock', 2);
+  renderAdminInsightSkeleton('dashboardRecentOrders', 4);
+}
+
 renderDashboardInsights = function () {
   const lowStockEl = document.getElementById('dashboardLowStock');
   const actionOrdersEl = document.getElementById('dashboardOrdersAction');
@@ -312,6 +366,8 @@ async function subirImagen(file) {
 // PRODUCTOS
 // ═══════════════════════════════════════════════════════════════════════════════
 async function cargarProductos() {
+  const tbody = document.getElementById('productosTableBody');
+  if (tbody) tbody.innerHTML = renderAdminTableSkeletonRows(6, 5);
   try {
     const response = await apiFetch('/admin/productos');
     todosProductos = Array.isArray(response) ? response.filter(prod => esActivo(prod.activo)) : [];
@@ -336,7 +392,7 @@ function renderizarTablaProductos() {
         <td>
           <div class="d-flex align-items-center gap-2">
             ${prod.imagen
-              ? `<img src="${APIService.getImageUrl(prod.imagen)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;" alt="" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">`
+              ? `<img src="${APIService.getImageUrl(prod.imagen)}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;" alt="" loading="lazy" decoding="async" width="38" height="38" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">`
               : `<div style="width:38px;height:38px;background:#e9ecef;border-radius:6px;"></div>`}
             <strong>${escapeHtml(prod.nombre)}</strong>
           </div>
@@ -482,6 +538,8 @@ function confirmarEliminarProductoDefinitivo(productoId) {
 }
 
 async function cargarCategorias() {
+  const tbody = document.getElementById('categoriasTableBody');
+  if (tbody) tbody.innerHTML = renderAdminTableSkeletonRows(5, 4);
   try {
     todasCategorias = await APIService.obtenerCategorias();
     renderizarTablaCategorias();
@@ -603,10 +661,10 @@ async function cargarBaseDatos() {
   const orderBody = document.getElementById('dbOrdenesTableBody');
   if (!prodBody || !catBody || !userBody || !orderBody) return;
 
-  prodBody.innerHTML = '<tr><td colspan="4" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
-  catBody.innerHTML = '<tr><td colspan="4" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
-  userBody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
-  orderBody.innerHTML = '<tr><td colspan="7" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  prodBody.innerHTML = renderAdminTableSkeletonRows(4, 4);
+  catBody.innerHTML = renderAdminTableSkeletonRows(4, 4);
+  userBody.innerHTML = renderAdminTableSkeletonRows(6, 4);
+  orderBody.innerHTML = renderAdminTableSkeletonRows(7, 4);
 
   try {
     const [productos, categorias, usuarios, ordenes] = await Promise.all([
@@ -825,14 +883,17 @@ async function activarCategoria(categoriaId) {
 // ESTADÍSTICAS
 // ═══════════════════════════════════════════════════════════════════════════════
 async function cargarEstadisticas() {
+  setAdminStatsLoading(true);
   try {
     const stats = await apiFetch('/ordenes/admin/estadisticas');
+    setAdminStatsLoading(false);
     document.getElementById('totalOrdenes').textContent  = stats.totalOrdenes  || 0;
     document.getElementById('ingresoTotal').textContent  = (stats.ingresoTotal || 0).toFixed(2);
     document.getElementById('completadas').textContent   = stats.completadas   || 0;
     document.getElementById('pendientes').textContent    = stats.pendientes    || 0;
   } catch (e) {
-    console.error('Error cargando estadísticas:', e);
+    setAdminStatsLoading(false);
+    console.error('Error cargando estadisticas:', e);
   }
 }
 
@@ -842,7 +903,7 @@ async function cargarEstadisticas() {
 async function cargarOrdenes() {
   const tbody = document.getElementById('ordenesTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  tbody.innerHTML = renderAdminTableSkeletonRows(7, 5);
 
   try {
     const ordenes = await apiFetch('/ordenes/admin/todas');
@@ -1074,7 +1135,7 @@ async function actualizarSeguimientoOrden(ordenId, numeroSeguimiento) {
 async function cargarUsuarios() {
   const tbody = document.getElementById('usuariosTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  tbody.innerHTML = renderAdminTableSkeletonRows(5, 5);
 
   try {
     const usuarios = await apiFetch('/users');
@@ -1186,7 +1247,7 @@ function abrirModalSeguimientoOrden(ordenId) {
 async function cargarMensajes() {
   const tbody = document.getElementById('mensajesTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  tbody.innerHTML = renderAdminTableSkeletonRows(6, 5);
 
   try {
     const mensajes = await apiFetch('/contacto');
@@ -1222,7 +1283,7 @@ async function cargarMensajes() {
 async function cargarResenasAdmin() {
   const tbody = document.getElementById('resenasAdminTableBody');
   if (!tbody) return; // Si la pestaña no está en el HTML, ignora para no dar error
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+  tbody.innerHTML = renderAdminTableSkeletonRows(5, 4);
 
   try {
     const resenas = await apiFetch('/resenas');

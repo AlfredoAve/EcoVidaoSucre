@@ -56,7 +56,7 @@ async function actualizarTablaCarrito(carrito) {
       <tr>
         <td>
           <div class="d-flex gap-3">
-            <img src="${APIService.getImageUrl(item.imagen)}" style="width:50px; height:50px; object-fit:cover; border-radius:5px;" alt="${escapeHtml(item.nombre)}" loading="lazy" width="400" height="220" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
+            <img src="${APIService.getImageUrl(item.imagen)}" style="width:50px; height:50px; object-fit:cover; border-radius:5px;" alt="${escapeHtml(item.nombre)}" loading="lazy" decoding="async" width="50" height="50" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             <div>
               <strong>${escapeHtml(item.nombre)}</strong>
             </div>

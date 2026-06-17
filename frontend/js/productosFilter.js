@@ -11,6 +11,32 @@ let totalPages = 1;
 const PRICE_MIN = 0;
 const PRICE_MAX = 1000;
 
+function renderProductSkeletons(count = 8) {
+  return Array.from({ length: count }, () => `
+    <div class="col-12 col-md-4 col-lg-3">
+      <div class="skeleton-card" aria-hidden="true">
+        <div class="skeleton-media"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line is-short"></div>
+          <div class="skeleton-line is-title"></div>
+          <div class="skeleton-row">
+            <div class="skeleton-line is-price"></div>
+            <div class="skeleton-pill"></div>
+          </div>
+          <div class="skeleton-actions">
+            <div class="skeleton-button"></div>
+            <div class="skeleton-button"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCategoryChipSkeletons(count = 5) {
+  return Array.from({ length: count }, () => '<span class="skeleton-chip" aria-hidden="true"></span>').join('');
+}
+
 async function ensureBootstrap() {
   if (window.bootstrap?.Modal) return;
 
@@ -67,6 +93,12 @@ async function cargarProductos(append = false) {
   const categoriaId = seleccionadas.length > 0 ? seleccionadas[0] : ''; 
 
   try {
+    if (!append && container) {
+      container.style.display = '';
+      container.innerHTML = renderProductSkeletons();
+      if (noResultsMsg) noResultsMsg.style.display = 'none';
+    }
+
     const data = await APIService.obtenerProductos(currentPage, LIMIT, categoriaId, termino);
     const productos = data.productos || [];
     totalPages = data.totalPaginas || 1;
@@ -131,6 +163,8 @@ async function cargarCategorias() {
   const container = document.getElementById('categoriesList');
 
   try {
+    if (container) container.innerHTML = renderCategoryChipSkeletons();
+
     const categorias = await APIService.obtenerCategorias();
 
     let html = `
@@ -330,8 +364,10 @@ function renderizarProductos(productos) {
                  class="card-img-top eco-card-img"
                  alt="${escapeHtml(prod.nombre)}"
                  loading="lazy"
-                 width="400"
-                 height="220"
+                 decoding="async"
+                 width="900"
+                 height="495"
+                 sizes="(max-width: 767px) calc(100vw - 32px), (max-width: 991px) 50vw, 25vw"
                  onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
             <button class="fav-btn ${esFavorito ? 'active' : ''}" type="button" data-product-id="${prod.id}" aria-label="Favorito">
               <i class="bi ${esFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i>

@@ -27,6 +27,7 @@
     }
 
     configurarEventos();
+    setProfileLoading(true);
     await cargarDatosPerfil();
     await cargarConteoNotificaciones();
 
@@ -45,6 +46,129 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  function panelLine(size = 'md') {
+    return `<span class="panel-skeleton-block is-${size}" aria-hidden="true"></span>`;
+  }
+
+  function renderClientKpiSkeletons() {
+    const summary = document.getElementById('ordenesSummary');
+    if (!summary) return;
+    summary.innerHTML = `
+      <div class="panel-skeleton-kpis" aria-hidden="true">
+        ${Array.from({ length: 4 }, () => `
+          <div class="panel-skeleton-kpi">
+            ${panelLine('sm')}
+            ${panelLine('value')}
+            ${panelLine('md')}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderClientOrderSkeletons(count = 3) {
+    return `
+      <div class="panel-skeleton-list" aria-hidden="true">
+        ${Array.from({ length: count }, () => `
+          <article class="panel-skeleton-card is-order">
+            <div class="panel-skeleton-row">
+              <div class="panel-skeleton-main">
+                ${panelLine('sm')}
+                ${panelLine('lg')}
+              </div>
+              ${panelLine('button')}
+            </div>
+            ${panelLine('xl')}
+            ${panelLine('md')}
+            <div class="panel-skeleton-actions">
+              ${panelLine('button')}
+              ${panelLine('button')}
+              ${panelLine('button')}
+            </div>
+          </article>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderNotificationSkeletons(count = 5) {
+    return `
+      <div class="panel-skeleton-list" aria-hidden="true">
+        ${Array.from({ length: count }, () => `
+          <article class="panel-skeleton-card is-notification">
+            <span class="panel-skeleton-dot"></span>
+            <span>
+              ${panelLine('xl')}
+              ${panelLine('sm')}
+            </span>
+          </article>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderReviewSkeletons(count = 3) {
+    return `
+      <div class="panel-skeleton-list" aria-hidden="true">
+        ${Array.from({ length: count }, () => `
+          <article class="panel-skeleton-card is-review">
+            <span class="panel-skeleton-dot"></span>
+            <span>
+              ${panelLine('lg')}
+              ${panelLine('xl')}
+              ${panelLine('sm')}
+            </span>
+          </article>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderFavoriteSkeletons(count = 3) {
+    return `
+      <div class="row g-3" aria-hidden="true">
+        ${Array.from({ length: count }, () => `
+          <div class="col-sm-6 col-lg-4">
+            <div class="skeleton-card">
+              <div class="skeleton-media"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line is-short"></div>
+                <div class="skeleton-line is-title"></div>
+                <div class="skeleton-row">
+                  <div class="skeleton-line is-price"></div>
+                  <div class="skeleton-pill"></div>
+                </div>
+                <div class="skeleton-actions">
+                  <div class="skeleton-button"></div>
+                  <div class="skeleton-button"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function setProfileLoading(isLoading) {
+    const avatar = document.querySelector('.profile-avatar');
+    const name = document.getElementById('userName');
+    const email = document.getElementById('userEmail');
+    const form = document.getElementById('profileForm');
+    const fields = form?.querySelectorAll('input, textarea, button') || [];
+
+    avatar?.classList.toggle('is-loading', isLoading);
+    form?.classList.toggle('profile-form-loading', isLoading);
+    fields.forEach(field => {
+      if (field.id !== 'email') field.disabled = isLoading;
+    });
+
+    if (isLoading) {
+      if (name) name.innerHTML = panelLine('md');
+      if (email) email.innerHTML = panelLine('lg');
+    }
   }
 
   function notify(message, type = 'info') {
@@ -128,6 +252,8 @@
     } catch (error) {
       console.error('Error cargando perfil:', error);
       notify('Error al cargar el perfil', 'error');
+    } finally {
+      setProfileLoading(false);
     }
   }
 
@@ -288,7 +414,7 @@
 
     return `
       <div class="order-product-thumb">
-        <img src="${getImageUrl(principal)}" alt="${escapeHtml(principal.nombre || 'Producto')}" onerror="this.src='https://placehold.co/96x96/F4F6F4/5F6E65?text=EcoVida';this.onerror=null;">
+        <img src="${getImageUrl(principal)}" alt="${escapeHtml(principal.nombre || 'Producto')}" loading="lazy" decoding="async" width="96" height="96" sizes="96px" onerror="this.src='https://placehold.co/96x96/F4F6F4/5F6E65?text=EcoVida';this.onerror=null;">
       </div>
     `;
   }
@@ -296,7 +422,8 @@
   async function cargarOrdenes() {
     const container = document.getElementById('ordenesList');
     if (!container) return;
-    container.innerHTML = '<div class="profile-loading"><span class="spinner-border spinner-border-sm" role="status"></span> Cargando tus pedidos...</div>';
+    renderClientKpiSkeletons();
+    container.innerHTML = renderClientOrderSkeletons();
 
     try {
       const ordenes = await APIService.obtenerMisOrdenes();
@@ -426,7 +553,7 @@
   async function cargarNotificaciones() {
     const container = document.getElementById('notificacionesList');
     if (!container) return;
-    container.innerHTML = '<div class="profile-loading"><span class="spinner-border spinner-border-sm" role="status"></span> Cargando notificaciones...</div>';
+    container.innerHTML = renderNotificationSkeletons();
 
     try {
       const data = await APIService.obtenerNotificaciones();
@@ -510,7 +637,7 @@
   async function cargarResenas() {
     const container = document.getElementById('resenasList');
     if (!container) return;
-    container.innerHTML = '<div class="profile-loading"><span class="spinner-border spinner-border-sm" role="status"></span> Cargando reseñas...</div>';
+    container.innerHTML = renderReviewSkeletons();
 
     try {
       const resenas = await APIService.obtenerMisResenas();
@@ -540,7 +667,7 @@
     const emptyState = document.getElementById('favoritosEmpty');
     if (!container || !emptyState) return;
 
-    container.innerHTML = '<div class="profile-loading"><span class="spinner-border spinner-border-sm" role="status"></span> Cargando favoritos...</div>';
+    container.innerHTML = renderFavoriteSkeletons();
     emptyState.style.display = 'none';
 
     try {
@@ -557,7 +684,7 @@
             <div class="col-sm-6 col-lg-4">
               <div class="card h-100 border-0 eco-card">
                 <div class="eco-card-img-wrapper">
-                  <img src="${getImageUrl(prod)}" class="card-img-top eco-card-img" alt="${escapeHtml(prod.nombre)}" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
+                  <img src="${getImageUrl(prod)}" class="card-img-top eco-card-img" alt="${escapeHtml(prod.nombre)}" loading="lazy" decoding="async" width="900" height="495" sizes="(max-width: 575px) calc(100vw - 32px), (max-width: 991px) 50vw, 33vw" onerror="this.src='https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen';this.onerror=null;">
                   <span class="eco-stock-badge eco-stock-ok">Favorito</span>
                 </div>
                 <div class="card-body d-flex flex-column eco-card-body">

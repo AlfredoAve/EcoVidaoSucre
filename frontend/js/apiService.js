@@ -105,6 +105,15 @@ class APIService {
     return res.json();
   }
 
+  static async loginGoogle(idToken) {
+    const res = await fetch(`${API_BASE}/auth/google`, {
+      method: 'POST',
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ idToken })
+    });
+    return res.json();
+  }
+
   static logout() {
     this.clearToken();
   }
