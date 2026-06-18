@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>EcoVida ? Productos 100% Naturales</title>
+<title>EcoVida Productos 100% Naturales</title>
 <meta content="Tienda online de productos naturales en Sucre, Bolivia: miel, aceites, tés, suplementos y más para tu bienestar." name="description"/>
 <link href="https://eco-vida-sucre.vercel.app/" rel="canonical"/>
 <!-- Google Analytics 4 -->
@@ -15,9 +15,9 @@
     gtag('js', new Date());
     gtag('config', 'G-FJ2FEMMR94');
   </script>
-<!-- Search Console ? activar cuando se verifique -->
+<!-- Search Console - activar cuando se verifique -->
 <!-- <meta name="google-site-verification" content="PENDIENTE_CODIGO_VERIFICACION"/> -->
-<!-- Meta Pixel ? activar cuando se tenga el ID -->
+<!-- Meta Pixel - activar cuando se tenga el ID -->
 <!--
   <script>
     fbq('init', 'PENDIENTE_PIXEL_ID');
@@ -193,9 +193,18 @@
 <div class="modal-image-top">
 <img alt="Imagen del producto seleccionado" id="productImage" src="" width="900" height="495" sizes="(max-width: 575px) calc(100vw - 48px), 520px"/>
 <div class="modal-img-overlay"></div>
+<div class="modal-image-badges">
+<span class="modal-origin-badge"><i class="bi bi-leaf"></i> EcoVida Natural</span>
+<span class="modal-stock-badge" id="productStockBadge">Disponible</span>
+</div>
 </div>
 <div class="modal-details-content">
+<div class="modal-product-meta">
 <span class="modal-category-label" id="productCategory"></span>
+<button aria-label="Guardar en favoritos" class="modal-favorite-btn" id="modalFavoriteBtn" type="button">
+<span class="modal-favorite-icon"><i class="bi bi-heart"></i></span>
+</button>
+</div>
 <h2 class="modal-product-title" id="productTitle"></h2>
 <div id="productRatingSummary"></div>
 <div class="modal-price-stock">
@@ -204,6 +213,11 @@
 <i class="bi bi-box-seam"></i> Stock disponible: <strong id="productStock">0</strong>
 </div>
 </div>
+<div class="modal-trust-row">
+<span><i class="bi bi-shield-check"></i> Compra segura</span>
+<span><i class="bi bi-truck"></i> Entrega en Sucre</span>
+<span id="productStockHint"><i class="bi bi-check2-circle"></i> Listo para comprar</span>
+</div>
 <p class="modal-desc" id="productDesc"></p>
 <section class="product-benefits-section" id="productBenefitsSection" style="display:none;">
 <h5 class="product-benefits-title">Beneficios</h5>
@@ -211,11 +225,15 @@
 </section>
 <div class="purchase-actions">
 <label class="form-label fw-bold text-dark mb-2" for="productQty">Cantidad</label>
-<div class="d-flex gap-3 align-items-end flex-wrap">
+<div class="modal-purchase-row">
+<div class="qty-stepper">
+<button aria-label="Disminuir cantidad" id="qtyMinusBtn" type="button">-</button>
 <div class="qty-input-wrap">
 <input class="form-control" id="productQty" min="1" type="number" value="1"/>
 </div>
-<button class="btn btn-success btn-add-cart-modal flex-grow-1" id="addToCartBtn" type="button">
+<button aria-label="Aumentar cantidad" id="qtyPlusBtn" type="button">+</button>
+</div>
+<button class="btn btn-success btn-add-cart-modal" id="addToCartBtn" type="button">
 <i class="bi bi-bag-plus fs-5 me-2"></i> Agregar al Carrito
 </button>
 </div>
@@ -301,7 +319,7 @@
 <hr class="footer-divider"/>
 <div class="row">
 <div class="col-12 text-center">
-<p class="footer-copyright mb-0">? 2025 EcoVida. Todos los derechos reservados.</p>
+<p class="footer-copyright mb-0">© 2025 EcoVida. Todos los derechos reservados.</p>
 </div>
 </div>
 </div>

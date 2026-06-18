@@ -275,6 +275,107 @@ async function toggleFavoritoCatalogo(btn) {
   }
 }
 
+function getModalStockInfo(stock) {
+  if (stock <= 0) {
+    return {
+      label: 'Sin stock',
+      className: 'is-out',
+      hint: '<i class="bi bi-x-circle"></i> No disponible por ahora'
+    };
+  }
+  if (stock <= 5) {
+    return {
+      label: 'Últimas unidades',
+      className: 'is-low',
+      hint: '<i class="bi bi-lightning-charge"></i> Quedan pocas unidades'
+    };
+  }
+  return {
+    label: 'Disponible',
+    className: 'is-ready',
+    hint: '<i class="bi bi-check2-circle"></i> Listo para comprar'
+  };
+}
+
+function configurarCantidadModal(stock) {
+  const qty = document.getElementById('productQty');
+  const minusBtn = document.getElementById('qtyMinusBtn');
+  const plusBtn = document.getElementById('qtyPlusBtn');
+  if (!qty) return;
+
+  const maxStock = Math.max(0, Number(stock || 0));
+  qty.max = maxStock;
+  qty.value = maxStock > 0 ? 1 : 0;
+
+  const syncButtons = () => {
+    const value = Number(qty.value || 0);
+    if (minusBtn) minusBtn.disabled = value <= 1 || maxStock <= 0;
+    if (plusBtn) plusBtn.disabled = value >= maxStock || maxStock <= 0;
+  };
+
+  if (minusBtn) {
+    minusBtn.onclick = () => {
+      qty.value = Math.max(1, Number(qty.value || 1) - 1);
+      syncButtons();
+    };
+  }
+
+  if (plusBtn) {
+    plusBtn.onclick = () => {
+      qty.value = Math.min(maxStock, Number(qty.value || 0) + 1);
+      syncButtons();
+    };
+  }
+
+  qty.oninput = () => {
+    const raw = Number(qty.value || 0);
+    qty.value = maxStock > 0 ? Math.min(maxStock, Math.max(1, raw)) : 0;
+    syncButtons();
+  };
+
+  syncButtons();
+}
+
+function configurarFavoritoModalCatalogo(productoId) {
+  const favBtn = document.getElementById('modalFavoriteBtn');
+  if (!favBtn) return;
+  const esFavorito = favoritosIdsCatalogo.has(productoId);
+  favBtn.classList.toggle('active', esFavorito);
+  favBtn.setAttribute('aria-label', esFavorito ? 'Quitar de favoritos' : 'Guardar en favoritos');
+  favBtn.innerHTML = `
+    <span class="modal-favorite-icon"><i class="bi ${esFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i></span>
+  `;
+  favBtn.onclick = async () => {
+    if (!APIService.getToken()) {
+      showNotif('Debes iniciar sesión para guardar favoritos');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const activo = favBtn.classList.contains('active');
+    const resultado = activo
+      ? await APIService.eliminarFavorito(productoId)
+      : await APIService.agregarFavorito(productoId);
+
+    if (resultado?.error) {
+      showNotif(resultado.error);
+      return;
+    }
+
+    if (activo) {
+      favoritosIdsCatalogo.delete(productoId);
+    } else {
+      favoritosIdsCatalogo.add(productoId);
+    }
+
+    configurarFavoritoModalCatalogo(productoId);
+    document.querySelectorAll(`.fav-btn[data-product-id="${productoId}"]`).forEach(btn => {
+      btn.classList.toggle('active', !activo);
+      btn.innerHTML = `<i class="bi ${!activo ? 'bi-heart-fill' : 'bi-heart'}"></i>`;
+    });
+  };
+}
+
 function aplicarFiltros() {
   // [NUEVO] Al filtrar, volvemos a la página 1 y hacemos fetch
   currentPage = 1;
@@ -423,10 +524,19 @@ async function abrirProducto(productoId) {
     imgEl.src = APIService.getImageUrl(productoSeleccionado.imagen);
     imgEl.onerror = function() { this.src = 'https://placehold.co/400x400/e9ecef/6c757d?text=Sin+Imagen'; this.onerror = null; };
     document.getElementById('productDesc').textContent = productoSeleccionado.descripcion || '';
-    document.getElementById('productPrice').textContent = productoSeleccionado.precio.toFixed(2);
+    document.getElementById('productPrice').textContent = Number(productoSeleccionado.precio || 0).toFixed(2);
     document.getElementById('productStock').textContent = stock;
-    document.getElementById('productQty').max = stock;
-    document.getElementById('productQty').value = stock > 0 ? 1 : 0;
+
+    const stockInfo = getModalStockInfo(stock);
+    const stockBadge = document.getElementById('productStockBadge');
+    if (stockBadge) {
+      stockBadge.textContent = stockInfo.label;
+      stockBadge.className = `modal-stock-badge ${stockInfo.className}`;
+    }
+    const stockHint = document.getElementById('productStockHint');
+    if (stockHint) stockHint.innerHTML = stockInfo.hint;
+    configurarCantidadModal(stock);
+    configurarFavoritoModalCatalogo(productoId);
 
     const beneficios = Array.isArray(productoSeleccionado.beneficios) ? productoSeleccionado.beneficios : [];
     const benefitsSection = document.getElementById('productBenefitsSection');
@@ -446,6 +556,9 @@ async function abrirProducto(productoId) {
 
     if (addBtn) {
       addBtn.disabled = stock <= 0;
+      addBtn.innerHTML = stock > 0
+        ? '<i class="bi bi-bag-plus fs-5 me-2"></i> Añadir al carrito'
+        : '<i class="bi bi-slash-circle fs-5 me-2"></i> Sin stock';
     }
 
     // Cargar reseñas
